@@ -1,0 +1,614 @@
+import { createServer } from "node:http";
+import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = fileURLToPath(new URL(".", import.meta.url));
+loadEnv();
+const port = Number(process.env.PORT || 3000);
+
+const demoStocks = {
+  NVDA: {
+    name: "NVIDIA Corporation",
+    price: 126.8,
+    change: 2.4,
+    marketCap: "$3.1T",
+    pe: "38.7",
+    revenue: "+78%",
+    margin: "74%",
+    score: 82,
+    verdict: "Constructive, but valuation-sensitive",
+    thesis:
+      "NVIDIA keeps a durable lead in accelerated computing, with data center demand still doing the heavy lifting. The setup is attractive when earnings growth outruns multiple compression, but the stock needs clean execution and visible AI infrastructure spending to defend its premium.",
+    drivers: [
+      "Data center GPUs and networking remain the primary growth engine.",
+      "CUDA ecosystem depth makes customer switching slower and more expensive.",
+      "Sovereign AI and enterprise inference could widen demand beyond hyperscalers."
+    ],
+    risks: [
+      "Customer concentration leaves results exposed to hyperscaler capex cycles.",
+      "Export controls and supply constraints can interrupt shipment timing.",
+      "A rich valuation leaves little room for slower earnings revisions."
+    ],
+    checks: [
+      "Track data center sequential growth and backlog commentary.",
+      "Compare gross margin durability against competitive accelerator launches.",
+      "Watch free cash flow conversion after inventory and supply commitments."
+    ]
+  },
+  AAPL: {
+    name: "Apple Inc.",
+    price: 203.5,
+    change: -0.7,
+    marketCap: "$3.0T",
+    pe: "29.4",
+    revenue: "+3%",
+    margin: "46%",
+    score: 71,
+    verdict: "Stable compounder with slower growth",
+    thesis:
+      "Apple remains an exceptional cash generator with sticky hardware, services, and a powerful buyback. The research question is whether AI-enabled devices and services can reaccelerate revenue enough to justify a premium multiple.",
+    drivers: [
+      "Services revenue improves mix and recurring cash flow.",
+      "Large installed base supports upgrade cycles and pricing power.",
+      "Capital returns provide downside support during slower product cycles."
+    ],
+    risks: [
+      "iPhone growth can stay muted without a stronger replacement cycle.",
+      "Regulatory pressure may weigh on App Store economics.",
+      "Premium valuation is sensitive to flat revenue expectations."
+    ],
+    checks: [
+      "Follow iPhone unit demand by region, especially China.",
+      "Monitor services gross margin and regulatory disclosures.",
+      "Compare buyback pace against free cash flow generation."
+    ]
+  },
+  MSFT: {
+    name: "Microsoft Corporation",
+    price: 438.2,
+    change: 1.1,
+    marketCap: "$3.3T",
+    pe: "34.2",
+    revenue: "+16%",
+    margin: "45%",
+    score: 84,
+    verdict: "High-quality AI platform exposure",
+    thesis:
+      "Microsoft offers one of the cleaner enterprise AI stories through Azure, Copilot, and the broader productivity suite. The business has multiple monetization paths, though investors should keep checking whether AI capex produces enough revenue leverage.",
+    drivers: [
+      "Azure AI services can lift cloud share and average contract value.",
+      "Copilot creates an upsell motion across Office and developer tools.",
+      "Enterprise relationships reduce adoption friction for new AI products."
+    ],
+    risks: [
+      "Heavy capex can pressure free cash flow if utilization lags.",
+      "Cloud competition may limit pricing power.",
+      "Security or reliability issues could slow enterprise adoption."
+    ],
+    checks: [
+      "Separate Azure growth from reported cloud growth.",
+      "Watch AI-related capex intensity and depreciation guidance.",
+      "Track Copilot seat adoption and renewal commentary."
+    ]
+  },
+  TSLA: {
+    name: "Tesla, Inc.",
+    price: 177.4,
+    change: -1.9,
+    marketCap: "$566B",
+    pe: "58.1",
+    revenue: "-4%",
+    margin: "18%",
+    score: 55,
+    verdict: "Optionality-rich, execution-heavy",
+    thesis:
+      "Tesla trades less like a traditional automaker and more like a bundle of autonomy, robotics, energy, and brand optionality. That upside is meaningful, but the current case needs margin stabilization and visible progress in autonomy monetization.",
+    drivers: [
+      "Energy storage growth diversifies revenue away from vehicles.",
+      "Autonomy milestones can shift the valuation framework.",
+      "Manufacturing scale remains a long-term cost advantage."
+    ],
+    risks: [
+      "Vehicle price cuts can keep pressuring automotive gross margin.",
+      "Autonomy timelines remain difficult to underwrite.",
+      "Competition is rising in China and lower-priced EV segments."
+    ],
+    checks: [
+      "Track automotive gross margin excluding credits.",
+      "Watch delivery growth by model and region.",
+      "Review concrete autonomy revenue disclosures."
+    ]
+  },
+  AMZN: {
+    name: "Amazon.com, Inc.",
+    price: 185.7,
+    change: 0.8,
+    marketCap: "$1.9T",
+    pe: "41.5",
+    revenue: "+12%",
+    margin: "10%",
+    score: 79,
+    verdict: "Margin expansion story still working",
+    thesis:
+      "Amazon's appeal rests on improving retail efficiency, AWS recovery, and advertising growth. The stock can keep working if operating leverage continues while AI investment supports cloud demand instead of only adding cost.",
+    drivers: [
+      "Advertising growth carries attractive incremental margins.",
+      "Regional fulfillment improvements support retail profitability.",
+      "AWS AI demand can improve growth after optimization headwinds."
+    ],
+    risks: [
+      "Cloud growth can disappoint if enterprise optimization persists.",
+      "Logistics and content spending may absorb margin gains.",
+      "Regulatory scrutiny can pressure marketplace practices."
+    ],
+    checks: [
+      "Compare AWS growth to peers each quarter.",
+      "Watch North America operating margin progression.",
+      "Track advertising growth and third-party seller trends."
+    ]
+  },
+  META: {
+    name: "Meta Platforms, Inc.",
+    price: 491.6,
+    change: 1.7,
+    marketCap: "$1.25T",
+    pe: "25.8",
+    revenue: "+21%",
+    margin: "39%",
+    score: 81,
+    verdict: "Efficient core business funding AI",
+    thesis:
+      "Meta combines a highly profitable advertising engine with aggressive AI investment. The case works when AI improves ad targeting, engagement, and business messaging while management keeps spending discipline visible.",
+    drivers: [
+      "AI ranking and ad tools can improve monetization.",
+      "Reels and messaging provide engagement and commerce optionality.",
+      "Buybacks amplify earnings growth when cash flow remains strong."
+    ],
+    risks: [
+      "AI and Reality Labs spending can expand faster than revenue.",
+      "Ad cycles remain tied to macro and small business demand.",
+      "Regulatory and privacy changes may limit targeting efficiency."
+    ],
+    checks: [
+      "Track capex guidance and operating expense discipline.",
+      "Watch ad impression growth versus price growth.",
+      "Monitor Reality Labs losses against core cash generation."
+    ]
+  },
+  JPM: {
+    name: "JPMorgan Chase & Co.",
+    price: 214.1,
+    change: 0.3,
+    marketCap: "$610B",
+    pe: "12.1",
+    revenue: "+8%",
+    margin: "32%",
+    score: 74,
+    verdict: "Best-in-class bank with cycle risk",
+    thesis:
+      "JPMorgan offers scale, diversification, and strong management quality. The opportunity is steadier than high-growth tech, with upside tied to credit resilience, deposit cost control, and capital returns.",
+    drivers: [
+      "Scale supports expense efficiency and broad client reach.",
+      "Investment banking recovery can add fee income upside.",
+      "Strong capital position supports dividends and repurchases."
+    ],
+    risks: [
+      "Credit normalization can raise provisions.",
+      "Deposit beta may pressure net interest income.",
+      "Regulatory capital rules can constrain buybacks."
+    ],
+    checks: [
+      "Watch net interest income guidance and deposit trends.",
+      "Track charge-offs across cards and commercial loans.",
+      "Review CET1 capital and buyback authorization updates."
+    ]
+  },
+  DIS: {
+    name: "The Walt Disney Company",
+    price: 101.2,
+    change: -0.4,
+    marketCap: "$184B",
+    pe: "20.3",
+    revenue: "+5%",
+    margin: "14%",
+    score: 63,
+    verdict: "Turnaround needs proof",
+    thesis:
+      "Disney has valuable brands and parks economics, but streaming profitability and linear TV decline still shape the debate. The stock needs consistent execution before the multiple can fully recover.",
+    drivers: [
+      "Parks demand and pricing remain powerful cash flow contributors.",
+      "Streaming losses have room to improve with pricing and bundling.",
+      "Franchise content can support licensing, experiences, and merchandise."
+    ],
+    risks: [
+      "Linear network decline can offset direct-to-consumer gains.",
+      "Content misses pressure both streaming engagement and brand momentum.",
+      "Consumer weakness can affect parks attendance and spending."
+    ],
+    checks: [
+      "Track streaming operating income and subscriber quality.",
+      "Watch parks margins and attendance commentary.",
+      "Review film slate performance and franchise pipeline."
+    ]
+  }
+};
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8"
+};
+
+function loadEnv() {
+  const envPath = join(root, ".env");
+  if (!existsSync(envPath)) return;
+
+  const lines = readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const separator = trimmed.indexOf("=");
+    if (separator === -1) continue;
+
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed
+      .slice(separator + 1)
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
+
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+function json(res, status, body) {
+  res.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store"
+  });
+  res.end(JSON.stringify(body));
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) {
+        reject(new Error("Request body is too large."));
+        req.destroy();
+      }
+    });
+    req.on("end", () => resolve(body ? JSON.parse(body) : {}));
+    req.on("error", reject);
+  });
+}
+
+function normalizeTicker(value) {
+  return String(value || "NVDA")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z.]/g, "")
+    .slice(0, 8) || "NVDA";
+}
+
+function fallbackStock(ticker) {
+  return { ticker, ...(demoStocks[ticker] || demoStocks.NVDA), source: "demo" };
+}
+
+function scoreFor(stock, lens, risk) {
+  let score = Number(stock.score || 65);
+  if (lens === "growth") score += String(stock.revenue).includes("-") ? -7 : 5;
+  if (lens === "value") score += Number.parseFloat(stock.pe) < 26 ? 5 : -5;
+  score += Number(risk) >= 4 && score > 78 ? 2 : 0;
+  score -= Number(risk) <= 2 && Number.parseFloat(stock.pe) > 35 ? 4 : 0;
+  return Math.max(25, Math.min(95, score));
+}
+
+function generatePath(stock, score) {
+  const points = 42;
+  const volatility = 0.045 + (100 - score) / 1800;
+  const drift = (score - 58) / 1700;
+  let price = stock.price * 0.82;
+  const series = [];
+
+  for (let i = 0; i < points; i += 1) {
+    const wave = Math.sin(i * 0.55 + stock.ticker.charCodeAt(0)) * volatility * stock.price;
+    price += stock.price * drift + wave * 0.12;
+    series.push(Number(Math.max(stock.price * 0.55, price).toFixed(2)));
+  }
+
+  return series;
+}
+
+function extractOutputText(data) {
+  return data.output_text || data.output?.flatMap((item) => item.content || []).find((item) => item.type === "output_text")?.text;
+}
+
+async function fetchAlphaVantageQuote(ticker) {
+  const key = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!key) return null;
+
+  const url = new URL("https://www.alphavantage.co/query");
+  url.searchParams.set("function", "GLOBAL_QUOTE");
+  url.searchParams.set("symbol", ticker);
+  url.searchParams.set("apikey", key);
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Alpha Vantage returned ${response.status}.`);
+  const data = await response.json();
+  const quote = data["Global Quote"];
+  if (!quote || !quote["05. price"]) return null;
+
+  const base = fallbackStock(ticker);
+  return {
+    ...base,
+    price: Number.parseFloat(quote["05. price"]),
+    change: Number.parseFloat(String(quote["10. change percent"]).replace("%", "")),
+    source: "alpha-vantage"
+  };
+}
+
+function localResearch({ stock, lens, horizon, risk }) {
+  const score = scoreFor(stock, lens, risk);
+  return {
+    ...stock,
+    score,
+    horizon,
+    lens,
+    chart: generatePath(stock, score),
+    generatedBy: "local"
+  };
+}
+
+async function aiResearch(input) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+
+  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const prompt = `Create an equity research brief as strict JSON with keys verdict, thesis, drivers, risks, checks, score.
+
+Ticker: ${input.stock.ticker}
+Company: ${input.stock.name}
+Price: ${input.stock.price}
+Market cap: ${input.stock.marketCap}
+Forward P/E: ${input.stock.pe}
+Revenue growth: ${input.stock.revenue}
+Margin: ${input.stock.margin}
+Lens: ${input.lens}
+Horizon: ${input.horizon}
+Risk tolerance: ${input.risk}/5
+
+Rules:
+- score must be an integer from 25 to 95.
+- drivers, risks, and checks must each contain exactly 3 concise strings.
+- Do not make up live news. Base the brief only on the provided metrics and durable business context.`;
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model,
+      input: prompt,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "stock_research_brief",
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["verdict", "thesis", "drivers", "risks", "checks", "score"],
+            properties: {
+              verdict: { type: "string" },
+              thesis: { type: "string" },
+              drivers: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
+              risks: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
+              checks: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
+              score: { type: "integer", minimum: 25, maximum: 95 }
+            }
+          }
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`OpenAI returned ${response.status}: ${detail}`);
+  }
+
+  const data = await response.json();
+  const text = extractOutputText(data);
+  if (!text) return null;
+
+  const brief = JSON.parse(text);
+  return {
+    ...input.stock,
+    ...brief,
+    score: Number(brief.score),
+    lens: input.lens,
+    horizon: input.horizon,
+    chart: generatePath(input.stock, Number(brief.score)),
+    generatedBy: "openai"
+  };
+}
+
+function localChat({ question, brief }) {
+  const q = String(question || "").toLowerCase();
+  const clean = (value) => String(value || "").replace(/[.!?]+$/, "");
+
+  if (q.includes("valuation") || q.includes("multiple") || q.includes("pe")) {
+    return `${brief.ticker} has a forward P/E marker of ${brief.pe}. With a research score of ${brief.score}, I would compare earnings growth, free cash flow conversion, and margin durability before increasing position size.`;
+  }
+
+  if (q.includes("risk") || q.includes("bear")) {
+    return `The most important bear case is: ${clean(brief.risks?.[0] || "the thesis weakens if execution or demand slows")}. The next check is: ${clean(brief.risks?.[1] || "valuation sensitivity")}.`;
+  }
+
+  if (q.includes("catalyst") || q.includes("driver")) {
+    return `The cleanest catalyst is: ${clean(brief.drivers?.[0] || "continued execution against growth expectations")}. I would also watch: ${clean(brief.drivers?.[1] || "margin performance")}.`;
+  }
+
+  if (q.includes("margin") || q.includes("profit")) {
+    return `${brief.name}'s margin marker is ${brief.margin}. The question is whether revenue growth produces operating leverage or gets absorbed by reinvestment, pricing pressure, or competition.`;
+  }
+
+  if (q.includes("what would change") || q.includes("change the thesis")) {
+    return `I would change the thesis if the next checks start failing: ${brief.checks?.slice(0, 2).map(clean).join(". ")}. The score should move down if those weaken, and up if they improve while valuation stays reasonable.`;
+  }
+
+  return `For ${brief.ticker}, I would anchor the answer in this thesis: ${brief.thesis}`;
+}
+
+async function aiChat(input) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+
+  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const prompt = `You are an equity research assistant. Answer the user's question using only the brief below.
+
+Rules:
+- Be concise and practical.
+- Do not provide personalized financial advice.
+- Do not claim access to live news, filings, or prices beyond the provided context.
+- If the user asks for a buy/sell decision, frame decision criteria instead.
+
+Brief:
+${JSON.stringify(input.brief, null, 2)}
+
+User question:
+${input.question}`;
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model,
+      input: prompt,
+      text: {
+        format: { type: "text" },
+        verbosity: "low"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`OpenAI returned ${response.status}: ${detail}`);
+  }
+
+  const data = await response.json();
+  return extractOutputText(data);
+}
+
+async function handleQuote(req, res, ticker) {
+  try {
+    const stock = (await fetchAlphaVantageQuote(ticker)) || fallbackStock(ticker);
+    json(res, 200, { stock });
+  } catch (error) {
+    json(res, 200, { stock: fallbackStock(ticker), warning: error.message });
+  }
+}
+
+async function handleResearch(req, res) {
+  try {
+    const body = await readBody(req);
+    const ticker = normalizeTicker(body.ticker);
+    const stock = (await fetchAlphaVantageQuote(ticker)) || fallbackStock(ticker);
+    const input = {
+      stock,
+      lens: body.lens || "balanced",
+      horizon: body.horizon || "12 months",
+      risk: Number(body.risk || 3)
+    };
+    const brief = (await aiResearch(input)) || localResearch(input);
+    json(res, 200, { brief });
+  } catch (error) {
+    json(res, 500, { error: error.message });
+  }
+}
+
+async function handleChat(req, res) {
+  try {
+    const body = await readBody(req);
+    const question = String(body.question || "").trim();
+    const brief = body.brief || fallbackStock(normalizeTicker(body.ticker));
+
+    if (!question) {
+      json(res, 400, { error: "Question is required." });
+      return;
+    }
+
+    const answer = (await aiChat({ question, brief })) || localChat({ question, brief });
+    json(res, 200, {
+      answer,
+      generatedBy: process.env.OPENAI_API_KEY ? "openai" : "local"
+    });
+  } catch (error) {
+    json(res, 500, { error: error.message });
+  }
+}
+
+async function serveStatic(req, res) {
+  const requestPath = new URL(req.url, `http://${req.headers.host}`).pathname;
+  const requested = requestPath === "/" ? "/index.html" : requestPath;
+  const safePath = normalize(decodeURIComponent(requested)).replace(/^(\.\.[/\\])+/, "");
+  const filePath = join(root, safePath);
+
+  if (!filePath.startsWith(root)) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
+
+  try {
+    const content = await readFile(filePath);
+    res.writeHead(200, { "content-type": mimeTypes[extname(filePath)] || "application/octet-stream" });
+    res.end(content);
+  } catch {
+    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Not found");
+  }
+}
+
+export const server = createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const tickerMatch = url.pathname.match(/^\/api\/quote\/([^/]+)$/);
+
+  if (req.method === "GET" && tickerMatch) {
+    await handleQuote(req, res, normalizeTicker(tickerMatch[1]));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/research") {
+    await handleResearch(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/chat") {
+    await handleChat(req, res);
+    return;
+  }
+
+  if (req.method === "GET" || req.method === "HEAD") {
+    await serveStatic(req, res);
+    return;
+  }
+
+  json(res, 405, { error: "Method not allowed" });
+});
+
+server.listen(port, () => {
+  console.log(`AI Stock Research Assistant running at http://localhost:${port}`);
+});

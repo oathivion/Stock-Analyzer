@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Stock Research Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Research controls">
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">AI</div>
+          <div>
+            <h1>Stock Research Assistant</h1>
+            <p>Fast equity briefs for conviction checks.</p>
+          </div>
+        </div>
+
+        <form class="research-form" id="researchForm">
+          <label for="tickerInput">Ticker or company</label>
+          <div class="search-row">
+            <input
+              id="tickerInput"
+              name="ticker"
+              type="text"
+              value="NVDA"
+              autocomplete="off"
+              aria-describedby="tickerHint"
+            />
+            <button class="icon-button primary" type="submit" title="Run research" aria-label="Run research">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 14-8-4 16-3-7-7-1Z" />
+              </svg>
+            </button>
+          </div>
+          <p id="tickerHint" class="hint">Try AAPL, MSFT, TSLA, AMZN, META, JPM, or DIS.</p>
+
+          <fieldset>
+            <legend>Research lens</legend>
+            <div class="segmented" role="radiogroup" aria-label="Research lens">
+              <label>
+                <input type="radio" name="lens" value="balanced" checked />
+                <span>Balanced</span>
+              </label>
+              <label>
+                <input type="radio" name="lens" value="growth" />
+                <span>Growth</span>
+              </label>
+              <label>
+                <input type="radio" name="lens" value="value" />
+                <span>Value</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Time horizon</legend>
+            <select id="horizonInput" name="horizon">
+              <option value="3 months">3 months</option>
+              <option value="12 months" selected>12 months</option>
+              <option value="3 years">3 years</option>
+            </select>
+          </fieldset>
+
+          <fieldset>
+            <legend>Risk tolerance</legend>
+            <div class="slider-row">
+              <span>Low</span>
+              <input id="riskInput" name="risk" type="range" min="1" max="5" value="3" />
+              <span>High</span>
+            </div>
+          </fieldset>
+        </form>
+
+        <section class="watchlist" aria-label="Watchlist">
+          <div class="section-title">
+            <h2>Watchlist</h2>
+            <button class="text-button" id="resetButton" type="button">Reset</button>
+          </div>
+          <div class="watchlist-grid" id="watchlistGrid"></div>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-live="polite">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Research brief</p>
+            <h2 id="companyName">NVIDIA Corporation</h2>
+          </div>
+          <div class="toolbar">
+            <button class="icon-button" id="copyButton" type="button" title="Copy brief" aria-label="Copy brief">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 8h11v11H8z" />
+                <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+              </svg>
+            </button>
+            <button class="icon-button" id="downloadButton" type="button" title="Download brief" aria-label="Download brief">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="market-strip" id="marketStrip"></div>
+
+        <section class="brief-layout">
+          <article class="analysis-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">AI thesis</p>
+                <h3 id="verdictTitle">Constructive, but valuation-sensitive</h3>
+              </div>
+              <div class="score-pill" id="scorePill">82</div>
+            </div>
+            <p class="thesis" id="thesisText"></p>
+            <div class="metric-grid" id="metricGrid"></div>
+          </article>
+
+          <article class="chart-panel">
+            <div class="panel-header compact">
+              <h3>Price path</h3>
+              <span id="chartLabel">12M simulated</span>
+            </div>
+            <canvas id="priceChart" width="760" height="320" aria-label="Simulated stock price chart"></canvas>
+          </article>
+        </section>
+
+        <section class="insight-grid">
+          <article>
+            <h3>Key Drivers</h3>
+            <ul id="driversList"></ul>
+          </article>
+          <article>
+            <h3>Risks</h3>
+            <ul id="risksList"></ul>
+          </article>
+          <article>
+            <h3>Next Checks</h3>
+            <ul id="checksList"></ul>
+          </article>
+        </section>
+
+        <section class="assistant-panel">
+          <div class="panel-header compact">
+            <h3>Ask the assistant</h3>
+            <span>Backend research chat</span>
+          </div>
+          <div class="chat-log" id="chatLog"></div>
+          <form class="chat-form" id="chatForm">
+            <input
+              id="questionInput"
+              type="text"
+              placeholder="Ask about margins, valuation, catalysts, or risk..."
+              autocomplete="off"
+            />
+            <button class="icon-button primary" type="submit" title="Ask" aria-label="Ask">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 14-8-4 16-3-7-7-1Z" />
+              </svg>
+            </button>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
