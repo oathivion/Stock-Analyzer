@@ -26,6 +26,8 @@ const metricGrid = document.querySelector("#metricGrid");
 const driversList = document.querySelector("#driversList");
 const risksList = document.querySelector("#risksList");
 const checksList = document.querySelector("#checksList");
+const contextList = document.querySelector("#contextList");
+const sourcesList = document.querySelector("#sourcesList");
 const chart = document.querySelector("#priceChart");
 const chartLabel = document.querySelector("#chartLabel");
 const chatLog = document.querySelector("#chatLog");
@@ -33,6 +35,8 @@ const chatForm = document.querySelector("#chatForm");
 const questionInput = document.querySelector("#questionInput");
 const copyButton = document.querySelector("#copyButton");
 const downloadButton = document.querySelector("#downloadButton");
+const refreshButton = document.querySelector("#refreshButton");
+const refreshStatus = document.querySelector("#refreshStatus");
 
 function getLens() {
   return new FormData(form).get("lens");
@@ -61,7 +65,25 @@ function fallbackBrief(ticker) {
     checks: ["Start the Node server for API-backed briefs.", "Add API keys in the environment for live quote and AI generation.", "Verify the latest filings and earnings transcript before making decisions."],
     chart: generateLocalPath(stock.price, 68),
     generatedBy: "browser fallback",
-    source: "demo"
+    source: "demo",
+    quoteSource: "Browser fallback",
+    quoteUpdatedAt: "Unavailable",
+    context: {
+      sector: "Unavailable",
+      industry: "Unavailable",
+      analystTargetPrice: "Unavailable",
+      dividendYield: "Unavailable",
+      fiftyTwoWeekHigh: "Unavailable",
+      fiftyTwoWeekLow: "Unavailable",
+      description: "Run the Node backend with provider keys to enrich this brief with source-backed fundamentals and recent news."
+    },
+    sources: [
+      {
+        title: "Browser fallback profile",
+        provider: "Demo data",
+        detail: "Shown when the backend cannot be reached from the page."
+      }
+    ]
   };
 }
 
@@ -146,12 +168,13 @@ function renderList(target, items) {
 }
 
 function renderMarketStrip(brief) {
-  const sourceLabel = brief.generatedBy === "openai" ? "OpenAI brief" : `${brief.source || "demo"} data`;
+  const sourceLabel = brief.quoteSource || (brief.generatedBy === "openai" ? "OpenAI brief" : `${brief.source || "demo"} data`);
   const values = [
     ["Last price", `$${Number(brief.price).toFixed(2)}`],
     ["Today", `${brief.change >= 0 ? "+" : ""}${brief.change}%`, brief.change >= 0 ? "gain" : "loss"],
     ["Market cap", brief.marketCap],
-    ["Source", sourceLabel]
+    ["Quote source", sourceLabel],
+    ["Quote time", brief.quoteUpdatedAt || "Unavailable"]
   ];
 
   marketStrip.innerHTML = values
@@ -161,15 +184,68 @@ function renderMarketStrip(brief) {
 
 function renderMetrics(brief) {
   const values = [
-    ["Revenue growth", brief.revenue],
+    ["Revenue", brief.revenue],
     ["Gross margin", brief.margin],
-    ["Research lens", brief.lens || getLens()],
-    ["Horizon", brief.horizon || document.querySelector("#horizonInput").value]
+    ["Sector", brief.context?.sector || "Unavailable"],
+    ["Industry", brief.context?.industry || "Unavailable"]
   ];
 
   metricGrid.innerHTML = values
     .map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`)
     .join("");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderContext(brief) {
+  const context = brief.context || {};
+  const values = [
+    ["Analyst target", context.analystTargetPrice || "Unavailable"],
+    ["Dividend yield", context.dividendYield || "Unavailable"],
+    ["52W high", context.fiftyTwoWeekHigh || "Unavailable"],
+    ["52W low", context.fiftyTwoWeekLow || "Unavailable"],
+    ["SEC revenue", context.fiscalRevenue || "Unavailable"],
+    ["SEC net income", context.fiscalNetIncome || "Unavailable"],
+    ["Assets", context.totalAssets || "Unavailable"],
+    ["Liabilities", context.totalLiabilities || "Unavailable"],
+    ["Operating cash flow", context.operatingCashFlow || "Unavailable"],
+    ["Latest filing", context.latestFilingDate || "Unavailable"],
+    ["Lens", brief.lens || getLens()],
+    ["Horizon", brief.horizon || document.querySelector("#horizonInput").value]
+  ];
+
+  contextList.innerHTML = `
+    <p>${escapeHtml(context.description || "Company profile context is unavailable.")}</p>
+    <div class="context-metrics">
+      ${values.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
+    </div>
+  `;
+}
+
+function renderSources(brief) {
+  const sources = brief.sources?.length
+    ? brief.sources
+    : [{ title: "No external source available", provider: "Local fallback", detail: "Configure API keys to add source-backed context." }];
+  const warnings = brief.warnings?.length ? brief.warnings : [];
+
+  sourcesList.innerHTML = [
+    ...sources.slice(0, 7).map((source) => {
+      const safeTitle = escapeHtml(source.title);
+      const safeUrl = encodeURI(String(source.url || ""));
+      const title = source.url
+        ? `<a href="${safeUrl}" target="_blank" rel="noreferrer">${safeTitle}</a>`
+        : `<strong>${safeTitle}</strong>`;
+      return `<div class="source-item">${title}<span>${escapeHtml(source.provider || "Unknown source")}</span><p>${escapeHtml(source.detail || "")}</p></div>`;
+    }),
+    ...warnings.map((warning) => `<div class="source-item warning"><strong>Provider warning</strong><span>Runtime</span><p>${escapeHtml(warning)}</p></div>`)
+  ].join("");
 }
 
 function drawChart(brief) {
@@ -274,9 +350,36 @@ async function askAssistant(question) {
   }
 }
 
+async function refreshTrustedData() {
+  refreshButton.disabled = true;
+  refreshStatus.textContent = "Refreshing supported stocks from trusted sources...";
+
+  try {
+    const response = await fetch("/api/refresh", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ tickers: defaultWatchlist })
+    });
+
+    if (!response.ok) throw new Error(`Refresh failed with ${response.status}.`);
+    const data = await response.json();
+    const refreshed = data.results?.length || 0;
+    const warningCount = data.results?.reduce((count, item) => count + (item.warnings?.length || 0), 0) || 0;
+    refreshStatus.textContent = `Refreshed ${refreshed} stocks. ${warningCount ? `${warningCount} provider warnings.` : "No provider warnings."}`;
+    requestResearch();
+  } catch (error) {
+    refreshStatus.textContent = `Refresh failed: ${error.message}`;
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
 function briefText() {
   const brief = activeBrief || fallbackBrief(activeTicker);
   return `${brief.name} (${brief.ticker})
+Calculation price: $${Number(brief.price).toFixed(2)}
+Quote source: ${brief.quoteSource || brief.source || "Local fallback"}
+Quote time: ${brief.quoteUpdatedAt || "Unavailable"}
 Score: ${brief.score}
 Verdict: ${brief.verdict}
 
@@ -289,7 +392,10 @@ Risks:
 - ${brief.risks.join("\n- ")}
 
 Next checks:
-- ${brief.checks.join("\n- ")}`;
+- ${brief.checks.join("\n- ")}
+
+Sources:
+- ${(brief.sources || []).map((source) => `${source.provider || "Source"}: ${source.title}`).join("\n- ") || "Local fallback"}`;
 }
 
 function render(brief) {
@@ -303,6 +409,8 @@ function render(brief) {
   renderList(driversList, brief.drivers);
   renderList(risksList, brief.risks);
   renderList(checksList, brief.checks);
+  renderContext(brief);
+  renderSources(brief);
   drawChart(brief);
   renderWatchlist();
   resetChat(brief);
@@ -346,6 +454,8 @@ document.querySelector("#resetButton").addEventListener("click", () => {
   document.querySelector("#riskInput").value = "3";
   requestResearch();
 });
+
+refreshButton.addEventListener("click", refreshTrustedData);
 
 render(fallbackBrief(activeTicker));
 requestResearch();

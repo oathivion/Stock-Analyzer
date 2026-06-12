@@ -1,0 +1,578 @@
+{
+  "NVDA": {
+    "ticker": "NVDA",
+    "name": "NVIDIA Corporation",
+    "price": 204.87,
+    "change": 2.22,
+    "marketCap": "$3.1T",
+    "pe": "38.7",
+    "revenue": "$216B",
+    "margin": "+71.1%",
+    "score": 82,
+    "verdict": "Constructive, but valuation-sensitive",
+    "thesis": "NVIDIA keeps a durable lead in accelerated computing, with data center demand still doing the heavy lifting. The setup is attractive when earnings growth outruns multiple compression, but the stock needs clean execution and visible AI infrastructure spending to defend its premium.",
+    "drivers": [
+      "Data center GPUs and networking remain the primary growth engine.",
+      "CUDA ecosystem depth makes customer switching slower and more expensive.",
+      "Sovereign AI and enterprise inference could widen demand beyond hyperscalers."
+    ],
+    "risks": [
+      "Customer concentration leaves results exposed to hyperscaler capex cycles.",
+      "Export controls and supply constraints can interrupt shipment timing.",
+      "A rich valuation leaves little room for slower earnings revisions."
+    ],
+    "checks": [
+      "Track data center sequential growth and backlog commentary.",
+      "Compare gross margin durability against competitive accelerator launches.",
+      "Watch free cash flow conversion after inventory and supply commitments."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0001045810",
+      "secEntityName": "NVIDIA CORP",
+      "fiscalRevenue": "$216B",
+      "fiscalNetIncome": "$120B",
+      "totalAssets": "$207B",
+      "totalLiabilities": "$50B",
+      "stockholdersEquity": "$157B",
+      "operatingCashFlow": "$103B",
+      "latestFiscalPeriod": "2026 FY",
+      "latestFilingDate": "2026-02-25"
+    },
+    "refreshedAt": "2026-06-12T01:34:40.064Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:01.000Z"
+  },
+  "AAPL": {
+    "ticker": "AAPL",
+    "name": "Apple Inc.",
+    "price": 295.63,
+    "change": 1.39,
+    "marketCap": "$3.0T",
+    "pe": "29.4",
+    "revenue": "$266B",
+    "margin": "+46.7%",
+    "score": 71,
+    "verdict": "Stable compounder with slower growth",
+    "thesis": "Apple remains an exceptional cash generator with sticky hardware, services, and a powerful buyback. The research question is whether AI-enabled devices and services can reaccelerate revenue enough to justify a premium multiple.",
+    "drivers": [
+      "Services revenue improves mix and recurring cash flow.",
+      "Large installed base supports upgrade cycles and pricing power.",
+      "Capital returns provide downside support during slower product cycles."
+    ],
+    "risks": [
+      "iPhone growth can stay muted without a stronger replacement cycle.",
+      "Regulatory pressure may weigh on App Store economics.",
+      "Premium valuation is sensitive to flat revenue expectations."
+    ],
+    "checks": [
+      "Follow iPhone unit demand by region, especially China.",
+      "Monitor services gross margin and regulatory disclosures.",
+      "Compare buyback pace against free cash flow generation."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0000320193",
+      "secEntityName": "Apple Inc.",
+      "fiscalRevenue": "$266B",
+      "fiscalNetIncome": "$72B",
+      "totalAssets": "$359B",
+      "totalLiabilities": "$286B",
+      "stockholdersEquity": "$88B",
+      "operatingCashFlow": "$83B",
+      "latestFiscalPeriod": "2018 FY",
+      "latestFilingDate": "2018-11-05"
+    },
+    "refreshedAt": "2026-06-12T01:34:40.436Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:01.000Z"
+  },
+  "MSFT": {
+    "ticker": "MSFT",
+    "name": "Microsoft Corporation",
+    "price": 390.34,
+    "change": -1.77,
+    "marketCap": "$3.3T",
+    "pe": "34.2",
+    "revenue": "$36B",
+    "margin": "+456.4%",
+    "score": 84,
+    "verdict": "High-quality AI platform exposure",
+    "thesis": "Microsoft offers one of the cleaner enterprise AI stories through Azure, Copilot, and the broader productivity suite. The business has multiple monetization paths, though investors should keep checking whether AI capex produces enough revenue leverage.",
+    "drivers": [
+      "Azure AI services can lift cloud share and average contract value.",
+      "Copilot creates an upsell motion across Office and developer tools.",
+      "Enterprise relationships reduce adoption friction for new AI products."
+    ],
+    "risks": [
+      "Heavy capex can pressure free cash flow if utilization lags.",
+      "Cloud competition may limit pricing power.",
+      "Security or reliability issues could slow enterprise adoption."
+    ],
+    "checks": [
+      "Separate Azure growth from reported cloud growth.",
+      "Watch AI-related capex intensity and depreciation guidance.",
+      "Track Copilot seat adoption and renewal commentary."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/MSFT?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0000789019",
+      "secEntityName": "MICROSOFT CORPORATION",
+      "fiscalRevenue": "$36B",
+      "fiscalNetIncome": "$98B",
+      "totalAssets": "$619B",
+      "totalLiabilities": "$276B",
+      "stockholdersEquity": "$343B",
+      "operatingCashFlow": "$127B",
+      "latestFiscalPeriod": "2011 Q2",
+      "latestFilingDate": "2011-01-27"
+    },
+    "refreshedAt": "2026-06-12T01:34:40.855Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:01.000Z"
+  },
+  "TSLA": {
+    "ticker": "TSLA",
+    "name": "Tesla, Inc.",
+    "price": 399.15,
+    "change": 4.6,
+    "marketCap": "$566B",
+    "pe": "58.1",
+    "revenue": "$95B",
+    "margin": "+18.0%",
+    "score": 55,
+    "verdict": "Optionality-rich, execution-heavy",
+    "thesis": "Tesla trades less like a traditional automaker and more like a bundle of autonomy, robotics, energy, and brand optionality. That upside is meaningful, but the current case needs margin stabilization and visible progress in autonomy monetization.",
+    "drivers": [
+      "Energy storage growth diversifies revenue away from vehicles.",
+      "Autonomy milestones can shift the valuation framework.",
+      "Manufacturing scale remains a long-term cost advantage."
+    ],
+    "risks": [
+      "Vehicle price cuts can keep pressuring automotive gross margin.",
+      "Autonomy timelines remain difficult to underwrite.",
+      "Competition is rising in China and lower-priced EV segments."
+    ],
+    "checks": [
+      "Track automotive gross margin excluding credits.",
+      "Watch delivery growth by model and region.",
+      "Review concrete autonomy revenue disclosures."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001318605.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0001318605",
+      "secEntityName": "Tesla, Inc.",
+      "fiscalRevenue": "$95B",
+      "fiscalNetIncome": "$4B",
+      "totalAssets": "$138B",
+      "totalLiabilities": "$55B",
+      "stockholdersEquity": "$82B",
+      "operatingCashFlow": "$15B",
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-01-29"
+    },
+    "refreshedAt": "2026-06-12T01:34:41.215Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:01.000Z"
+  },
+  "AMZN": {
+    "ticker": "AMZN",
+    "name": "Amazon.com, Inc.",
+    "price": 241.51,
+    "change": 1.47,
+    "marketCap": "$1.9T",
+    "pe": "41.5",
+    "revenue": "$104B",
+    "margin": "+5.3%",
+    "score": 79,
+    "verdict": "Margin expansion story still working",
+    "thesis": "Amazon's appeal rests on improving retail efficiency, AWS recovery, and advertising growth. The stock can keep working if operating leverage continues while AI investment supports cloud demand instead of only adding cost.",
+    "drivers": [
+      "Advertising growth carries attractive incremental margins.",
+      "Regional fulfillment improvements support retail profitability.",
+      "AWS AI demand can improve growth after optimization headwinds."
+    ],
+    "risks": [
+      "Cloud growth can disappoint if enterprise optimization persists.",
+      "Logistics and content spending may absorb margin gains.",
+      "Regulatory scrutiny can pressure marketplace practices."
+    ],
+    "checks": [
+      "Compare AWS growth to peers each quarter.",
+      "Watch North America operating margin progression.",
+      "Track advertising growth and third-party seller trends."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMZN?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0001018724",
+      "secEntityName": "AMAZON COM INC",
+      "fiscalRevenue": "$104B",
+      "fiscalNetIncome": "$91B",
+      "totalAssets": "$818B",
+      "totalLiabilities": "Unavailable",
+      "stockholdersEquity": "$411B",
+      "operatingCashFlow": "$149B",
+      "latestFiscalPeriod": "2018 Q2",
+      "latestFilingDate": "2018-07-27"
+    },
+    "refreshedAt": "2026-06-12T01:34:41.683Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:00.000Z"
+  },
+  "META": {
+    "ticker": "META",
+    "name": "Meta Platforms, Inc.",
+    "price": 568.43,
+    "change": -0.45,
+    "marketCap": "$1.25T",
+    "pe": "25.8",
+    "revenue": "$39B",
+    "margin": "39%",
+    "score": 81,
+    "verdict": "Efficient core business funding AI",
+    "thesis": "Meta combines a highly profitable advertising engine with aggressive AI investment. The case works when AI improves ad targeting, engagement, and business messaging while management keeps spending discipline visible.",
+    "drivers": [
+      "AI ranking and ad tools can improve monetization.",
+      "Reels and messaging provide engagement and commerce optionality.",
+      "Buybacks amplify earnings growth when cash flow remains strong."
+    ],
+    "risks": [
+      "AI and Reality Labs spending can expand faster than revenue.",
+      "Ad cycles remain tied to macro and small business demand.",
+      "Regulatory and privacy changes may limit targeting efficiency."
+    ],
+    "checks": [
+      "Track capex guidance and operating expense discipline.",
+      "Watch ad impression growth versus price growth.",
+      "Monitor Reality Labs losses against core cash generation."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/META?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0001326801",
+      "secEntityName": "Meta Platforms, Inc.",
+      "fiscalRevenue": "$39B",
+      "fiscalNetIncome": "$60B",
+      "totalAssets": "$366B",
+      "totalLiabilities": "$149B",
+      "stockholdersEquity": "$217B",
+      "operatingCashFlow": "$116B",
+      "latestFiscalPeriod": "2018 Q3",
+      "latestFilingDate": "2018-10-31"
+    },
+    "refreshedAt": "2026-06-12T01:34:42.020Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:01.000Z"
+  },
+  "JPM": {
+    "ticker": "JPM",
+    "name": "JPMorgan Chase & Co.",
+    "price": 313.49,
+    "change": 1.41,
+    "marketCap": "$610B",
+    "pe": "12.1",
+    "revenue": "$182B",
+    "margin": "32%",
+    "score": 74,
+    "verdict": "Best-in-class bank with cycle risk",
+    "thesis": "JPMorgan offers scale, diversification, and strong management quality. The opportunity is steadier than high-growth tech, with upside tied to credit resilience, deposit cost control, and capital returns.",
+    "drivers": [
+      "Scale supports expense efficiency and broad client reach.",
+      "Investment banking recovery can add fee income upside.",
+      "Strong capital position supports dividends and repurchases."
+    ],
+    "risks": [
+      "Credit normalization can raise provisions.",
+      "Deposit beta may pressure net interest income.",
+      "Regulatory capital rules can constrain buybacks."
+    ],
+    "checks": [
+      "Watch net interest income guidance and deposit trends.",
+      "Track charge-offs across cards and commercial loans.",
+      "Review CET1 capital and buyback authorization updates."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000019617.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/JPM?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0000019617",
+      "secEntityName": "JPMORGAN CHASE & CO",
+      "fiscalRevenue": "$182B",
+      "fiscalNetIncome": "$57B",
+      "totalAssets": "$4.4T",
+      "totalLiabilities": "$4.1T",
+      "stockholdersEquity": "$362B",
+      "operatingCashFlow": null,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-02-13"
+    },
+    "refreshedAt": "2026-06-12T01:34:42.499Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:00:02.000Z"
+  },
+  "DIS": {
+    "ticker": "DIS",
+    "name": "The Walt Disney Company",
+    "price": 100.34,
+    "change": 1.75,
+    "marketCap": "$184B",
+    "pe": "20.3",
+    "revenue": "$51B",
+    "margin": "14%",
+    "score": 63,
+    "verdict": "Turnaround needs proof",
+    "thesis": "Disney has valuable brands and parks economics, but streaming profitability and linear TV decline still shape the debate. The stock needs consistent execution before the multiple can fully recover.",
+    "drivers": [
+      "Parks demand and pricing remain powerful cash flow contributors.",
+      "Streaming losses have room to improve with pricing and bundling.",
+      "Franchise content can support licensing, experiences, and merchandise."
+    ],
+    "risks": [
+      "Linear network decline can offset direct-to-consumer gains.",
+      "Content misses pressure both streaming engagement and brand momentum.",
+      "Consumer weakness can affect parks attendance and spending."
+    ],
+    "checks": [
+      "Track streaming operating income and subscriber quality.",
+      "Watch parks margins and attendance commentary.",
+      "Review film slate performance and franchise pipeline."
+    ],
+    "source": "sec-edgar",
+    "sources": [
+      {
+        "title": "Built-in demo company profile",
+        "provider": "Demo data",
+        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001744489.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/DIS?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ],
+    "context": {
+      "sector": "Unavailable",
+      "industry": "Unavailable",
+      "description": "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      "analystTargetPrice": "Unavailable",
+      "dividendYield": "Unavailable",
+      "fiftyTwoWeekHigh": "Unavailable",
+      "fiftyTwoWeekLow": "Unavailable",
+      "latestNews": [],
+      "secCik": "0001744489",
+      "secEntityName": "WALT DISNEY CO/",
+      "fiscalRevenue": "$51B",
+      "fiscalNetIncome": "$5B",
+      "totalAssets": "$198B",
+      "totalLiabilities": "Unavailable",
+      "stockholdersEquity": "$110B",
+      "operatingCashFlow": "$8B",
+      "latestFiscalPeriod": "2026 Q2",
+      "latestFilingDate": "2026-05-06"
+    },
+    "refreshedAt": "2026-06-12T01:34:42.753Z",
+    "warnings": [],
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-11T20:03:15.000Z"
+  }
+}

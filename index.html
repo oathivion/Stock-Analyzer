@@ -82,8 +82,12 @@
         <section class="watchlist" aria-label="Watchlist">
           <div class="section-title">
             <h2>Watchlist</h2>
-            <button class="text-button" id="resetButton" type="button">Reset</button>
+            <div class="watch-actions">
+              <button class="text-button" id="refreshButton" type="button">Refresh data</button>
+              <button class="text-button" id="resetButton" type="button">Reset</button>
+            </div>
           </div>
+          <p class="hint" id="refreshStatus">Trusted-source cache updates from SEC EDGAR and configured market data providers.</p>
           <div class="watchlist-grid" id="watchlistGrid"></div>
         </section>
       </aside>
@@ -147,6 +151,17 @@
           <article>
             <h3>Next Checks</h3>
             <ul id="checksList"></ul>
+          </article>
+        </section>
+
+        <section class="source-grid">
+          <article>
+            <h3>Company Context</h3>
+            <div class="context-list" id="contextList"></div>
+          </article>
+          <article>
+            <h3>Sources</h3>
+            <div class="source-list" id="sourcesList"></div>
           </article>
         </section>
 

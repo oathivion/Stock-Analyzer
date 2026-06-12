@@ -228,6 +228,7 @@ input:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .section-title h2 {
@@ -240,6 +241,16 @@ input:disabled {
   color: #cfe7d9;
   cursor: pointer;
   font-weight: 700;
+}
+
+.watch-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.text-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .research-form.is-loading .icon-button.primary {
@@ -321,7 +332,7 @@ input:disabled {
 .market-strip,
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
@@ -428,9 +439,87 @@ input:disabled {
   gap: 18px;
 }
 
-.insight-grid h3 {
+.source-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 18px;
+}
+
+.insight-grid h3,
+.source-grid h3 {
   margin-bottom: 12px;
   font-size: 16px;
+}
+
+.source-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.context-list {
+  display: grid;
+  gap: 16px;
+}
+
+.context-list p,
+.source-item p {
+  color: #334139;
+  line-height: 1.5;
+}
+
+.context-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.context-metrics div {
+  min-height: 72px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.context-metrics span,
+.source-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.context-metrics strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.source-list {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.source-item {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.source-item a,
+.source-item strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.source-item.warning {
+  border-color: rgba(184, 121, 24, 0.42);
+  background: #fff8ed;
 }
 
 ul {
@@ -491,7 +580,9 @@ ul {
 
   .market-strip,
   .metric-grid,
-  .insight-grid {
+  .insight-grid,
+  .source-grid,
+  .context-metrics {
     grid-template-columns: 1fr;
   }
 

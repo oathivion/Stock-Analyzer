@@ -1,12 +1,24 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 loadEnv();
 const port = Number(process.env.PORT || 3000);
+const cachePath = join(root, "data", "stocks.json");
+const supportedTickers = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
+const cikByTicker = {
+  AAPL: "0000320193",
+  MSFT: "0000789019",
+  NVDA: "0001045810",
+  TSLA: "0001318605",
+  AMZN: "0001018724",
+  META: "0001326801",
+  JPM: "0000019617",
+  DIS: "0001744489"
+};
 
 const demoStocks = {
   NVDA: {
@@ -297,8 +309,60 @@ function normalizeTicker(value) {
     .slice(0, 8) || "NVDA";
 }
 
+function loadStockCache() {
+  if (!existsSync(cachePath)) return {};
+  try {
+    return JSON.parse(readFileSync(cachePath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+async function saveStockCache(cache) {
+  await mkdir(join(root, "data"), { recursive: true });
+  await writeFile(cachePath, `${JSON.stringify(cache, null, 2)}\n`);
+}
+
 function fallbackStock(ticker) {
-  return { ticker, ...(demoStocks[ticker] || demoStocks.NVDA), source: "demo" };
+  const cached = loadStockCache()[ticker];
+  if (cached) {
+    return {
+      ...cached,
+      source: cached.source || "trusted-cache",
+      sources: cached.sources?.length
+        ? cached.sources
+        : [
+            {
+              title: "Local trusted-source cache",
+              provider: "Stock Analyzer",
+              detail: `Last refreshed ${cached.refreshedAt || "previously"}.`
+            }
+          ]
+    };
+  }
+
+  return {
+    ticker,
+    ...(demoStocks[ticker] || demoStocks.NVDA),
+    source: "demo",
+    sources: [
+      {
+        title: "Built-in demo company profile",
+        provider: "Demo data",
+        detail: "Used when live provider keys are not configured or provider data is unavailable."
+      }
+    ],
+    context: {
+      sector: "Unavailable",
+      industry: "Unavailable",
+      description: "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      analystTargetPrice: "Unavailable",
+      dividendYield: "Unavailable",
+      fiftyTwoWeekHigh: "Unavailable",
+      fiftyTwoWeekLow: "Unavailable",
+      latestNews: []
+    }
+  };
 }
 
 function scoreFor(stock, lens, risk) {
@@ -330,6 +394,22 @@ function extractOutputText(data) {
   return data.output_text || data.output?.flatMap((item) => item.content || []).find((item) => item.type === "output_text")?.text;
 }
 
+function dedupeSources(sources = []) {
+  const seen = new Set();
+  return sources.filter((source) => {
+    const key = [source.provider, source.title, source.url].filter(Boolean).join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`${url} returned ${response.status}.`);
+  return response.json();
+}
+
 async function fetchAlphaVantageQuote(ticker) {
   const key = process.env.ALPHA_VANTAGE_API_KEY;
   if (!key) return null;
@@ -339,9 +419,7 @@ async function fetchAlphaVantageQuote(ticker) {
   url.searchParams.set("symbol", ticker);
   url.searchParams.set("apikey", key);
 
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Alpha Vantage returned ${response.status}.`);
-  const data = await response.json();
+  const data = await fetchJson(url);
   const quote = data["Global Quote"];
   if (!quote || !quote["05. price"]) return null;
 
@@ -350,8 +428,279 @@ async function fetchAlphaVantageQuote(ticker) {
     ...base,
     price: Number.parseFloat(quote["05. price"]),
     change: Number.parseFloat(String(quote["10. change percent"]).replace("%", "")),
-    source: "alpha-vantage"
+    quoteSource: "Alpha Vantage",
+    quoteUpdatedAt: quote["07. latest trading day"] || new Date().toISOString(),
+    source: "alpha-vantage",
+    sources: [
+      ...(base.sources || []),
+      {
+        title: "Global Quote",
+        provider: "Alpha Vantage",
+        detail: "Latest quote endpoint for price and daily percentage change."
+      }
+    ]
   };
+}
+
+async function fetchYahooQuote(ticker) {
+  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}`);
+  url.searchParams.set("range", "1d");
+  url.searchParams.set("interval", "1m");
+
+  const data = await fetchJson(url);
+  const result = data.chart?.result?.[0];
+  const meta = result?.meta;
+  const price = Number(meta?.regularMarketPrice);
+  if (!Number.isFinite(price)) return null;
+
+  const previousClose = Number(meta.chartPreviousClose || meta.previousClose);
+  const change = Number.isFinite(previousClose) && previousClose > 0 ? ((price - previousClose) / previousClose) * 100 : undefined;
+  const quoteUpdatedAt = meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : new Date().toISOString();
+  const base = fallbackStock(ticker);
+
+  return {
+    ...base,
+    price,
+    change: Number.isFinite(change) ? Number(change.toFixed(2)) : base.change,
+    quoteSource: "Yahoo Finance",
+    quoteUpdatedAt,
+    source: base.source === "demo" ? "yahoo-finance" : base.source,
+    sources: [
+      ...(base.sources || []),
+      {
+        title: "Chart quote",
+        provider: "Yahoo Finance",
+        url: url.toString(),
+        detail: "No-key quote endpoint used for the current calculation price and daily percentage change."
+      }
+    ]
+  };
+}
+
+async function fetchAlphaVantageOverview(ticker) {
+  const key = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!key) return null;
+
+  const url = new URL("https://www.alphavantage.co/query");
+  url.searchParams.set("function", "OVERVIEW");
+  url.searchParams.set("symbol", ticker);
+  url.searchParams.set("apikey", key);
+
+  const data = await fetchJson(url);
+  if (!data || !data.Symbol) return null;
+
+  return {
+    marketCap: formatLargeNumber(data.MarketCapitalization) || undefined,
+    pe: data.PERatio && data.PERatio !== "None" ? data.PERatio : undefined,
+    revenue: data.QuarterlyRevenueGrowthYOY && data.QuarterlyRevenueGrowthYOY !== "None" ? formatPercent(data.QuarterlyRevenueGrowthYOY) : undefined,
+    margin: data.GrossProfitTTM && data.RevenueTTM ? formatPercent(Number(data.GrossProfitTTM) / Number(data.RevenueTTM)) : undefined,
+    context: {
+      sector: data.Sector || "Unavailable",
+      industry: data.Industry || "Unavailable",
+      description: data.Description || "Company description unavailable.",
+      analystTargetPrice: data.AnalystTargetPrice || "Unavailable",
+      dividendYield: data.DividendYield && data.DividendYield !== "None" ? formatPercent(data.DividendYield) : "Unavailable",
+      fiftyTwoWeekHigh: data["52WeekHigh"] || "Unavailable",
+      fiftyTwoWeekLow: data["52WeekLow"] || "Unavailable"
+    },
+    source: "alpha-vantage",
+    sourceItem: {
+      title: "Company Overview",
+      provider: "Alpha Vantage",
+      detail: "Fundamentals endpoint for sector, industry, valuation, revenue growth, target price, dividend yield, and 52-week range."
+    }
+  };
+}
+
+async function fetchAlphaVantageNews(ticker) {
+  const key = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!key) return [];
+
+  const url = new URL("https://www.alphavantage.co/query");
+  url.searchParams.set("function", "NEWS_SENTIMENT");
+  url.searchParams.set("tickers", ticker);
+  url.searchParams.set("limit", "5");
+  url.searchParams.set("apikey", key);
+
+  const data = await fetchJson(url);
+  const feed = Array.isArray(data.feed) ? data.feed : [];
+
+  return feed.slice(0, 5).map((item) => ({
+    title: item.title || "Untitled news item",
+    provider: item.source || "Alpha Vantage News",
+    url: item.url,
+    publishedAt: formatNewsDate(item.time_published),
+    sentiment: item.overall_sentiment_label || "Unrated"
+  }));
+}
+
+async function fetchSecCompanyFacts(ticker) {
+  const cik = cikByTicker[ticker];
+  if (!cik) return null;
+
+  const userAgent = process.env.SEC_USER_AGENT || "StockAnalyzer/1.0 contact@example.com";
+  const url = `https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`;
+  const data = await fetchJson(url, {
+    headers: {
+      "user-agent": userAgent,
+      accept: "application/json"
+    }
+  });
+
+  const facts = data.facts?.["us-gaap"] || {};
+  const revenueFact = latestFact(facts.Revenues) || latestFact(facts.SalesRevenueNet);
+  const netIncomeFact = latestFact(facts.NetIncomeLoss);
+  const grossProfitFact = latestFact(facts.GrossProfit);
+  const assetsFact = latestFact(facts.Assets);
+  const liabilitiesFact = latestFact(facts.Liabilities);
+  const equityFact = latestFact(facts.StockholdersEquity);
+  const operatingCashFlowFact = latestFact(facts.NetCashProvidedByUsedInOperatingActivities);
+
+  const revenue = revenueFact?.val;
+  const grossProfit = grossProfitFact?.val;
+
+  return {
+    revenue: revenue ? formatLargeNumber(revenue) : undefined,
+    margin: revenue && grossProfit ? formatPercent(grossProfit / revenue) : undefined,
+    context: {
+      secCik: cik,
+      secEntityName: data.entityName || "Unavailable",
+      fiscalRevenue: revenue ? formatLargeNumber(revenue) : "Unavailable",
+      fiscalNetIncome: netIncomeFact?.val ? formatLargeNumber(netIncomeFact.val) : "Unavailable",
+      totalAssets: assetsFact?.val ? formatLargeNumber(assetsFact.val) : "Unavailable",
+      totalLiabilities: liabilitiesFact?.val ? formatLargeNumber(liabilitiesFact.val) : "Unavailable",
+      stockholdersEquity: equityFact?.val ? formatLargeNumber(equityFact.val) : "Unavailable",
+      operatingCashFlow: operatingCashFlowFact?.val ? formatLargeNumber(operatingCashFlowFact.val) : "Unavailable",
+      latestFiscalPeriod: revenueFact?.fy ? `${revenueFact.fy}${revenueFact.fp ? ` ${revenueFact.fp}` : ""}` : "Unavailable",
+      latestFilingDate: revenueFact?.filed || "Unavailable"
+    },
+    sourceItem: {
+      title: "SEC EDGAR Company Facts",
+      provider: "U.S. Securities and Exchange Commission",
+      url,
+      detail: "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+    }
+  };
+}
+
+function latestFact(concept) {
+  const usdFacts = concept?.units?.USD;
+  if (!Array.isArray(usdFacts)) return null;
+
+  return usdFacts
+    .filter((fact) => fact.val !== undefined && fact.filed && !fact.frame?.includes("Q") && ["10-K", "10-Q", "20-F", "40-F"].includes(fact.form))
+    .sort((a, b) => {
+      const filed = String(b.filed).localeCompare(String(a.filed));
+      if (filed !== 0) return filed;
+      return Number(b.end?.replaceAll("-", "") || 0) - Number(a.end?.replaceAll("-", "") || 0);
+    })[0];
+}
+
+async function buildStockSnapshot(ticker) {
+  const warnings = [];
+  let stock = fallbackStock(ticker);
+
+  try {
+    stock = (await fetchAlphaVantageQuote(ticker)) || (await fetchYahooQuote(ticker)) || stock;
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  try {
+    const secFacts = await fetchSecCompanyFacts(ticker);
+    if (secFacts) {
+      stock = {
+        ...stock,
+        revenue: secFacts.revenue || stock.revenue,
+        margin: secFacts.margin || stock.margin,
+        context: { ...(stock.context || {}), ...(secFacts.context || {}) },
+        source: stock.source === "demo" ? "sec-edgar" : stock.source,
+        sources: [...(stock.sources || []), secFacts.sourceItem]
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  try {
+    const overview = await fetchAlphaVantageOverview(ticker);
+    if (overview) {
+      stock = {
+        ...stock,
+        marketCap: overview.marketCap || stock.marketCap,
+        pe: overview.pe || stock.pe,
+        revenue: overview.revenue || stock.revenue,
+        margin: overview.margin || stock.margin,
+        context: { ...(stock.context || {}), ...(overview.context || {}) },
+        source: overview.source,
+        sources: [...(stock.sources || []), overview.sourceItem]
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  try {
+    const news = await fetchAlphaVantageNews(ticker);
+    if (news.length) {
+      stock = {
+        ...stock,
+        context: { ...(stock.context || {}), latestNews: news },
+        sources: [
+          ...(stock.sources || []),
+          ...news.map((item) => ({
+            title: item.title,
+            provider: item.provider,
+            url: item.url,
+            detail: `${item.publishedAt || "Recent"} sentiment: ${item.sentiment}`
+          }))
+        ]
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  return { stock: { ...stock, sources: dedupeSources(stock.sources) }, warnings };
+}
+
+async function refreshTrustedStocks(tickers = supportedTickers) {
+  const cache = loadStockCache();
+  const results = [];
+
+  for (const ticker of tickers.map(normalizeTicker)) {
+    const { stock, warnings } = await buildStockSnapshot(ticker);
+    const refreshed = {
+      ...stock,
+      refreshedAt: new Date().toISOString(),
+      warnings
+    };
+    cache[ticker] = refreshed;
+    results.push({ ticker, source: refreshed.source, warnings, sourceCount: refreshed.sources?.length || 0 });
+  }
+
+  await saveStockCache(cache);
+  return { refreshedAt: new Date().toISOString(), results, cache };
+}
+
+function formatLargeNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return null;
+  if (number >= 1_000_000_000_000) return `$${(number / 1_000_000_000_000).toFixed(1)}T`;
+  if (number >= 1_000_000_000) return `$${(number / 1_000_000_000).toFixed(0)}B`;
+  if (number >= 1_000_000) return `$${(number / 1_000_000).toFixed(0)}M`;
+  return `$${number.toLocaleString("en-US")}`;
+}
+
+function formatPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "Unavailable";
+  return `${number >= 0 ? "+" : ""}${(number * 100).toFixed(1)}%`;
+}
+
+function formatNewsDate(value) {
+  if (!value || value.length < 8) return "";
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
 function localResearch({ stock, lens, horizon, risk }) {
@@ -362,7 +711,9 @@ function localResearch({ stock, lens, horizon, risk }) {
     horizon,
     lens,
     chart: generatePath(stock, score),
-    generatedBy: "local"
+    generatedBy: "local",
+    sources: stock.sources || [],
+    context: stock.context || {}
   };
 }
 
@@ -380,6 +731,12 @@ Market cap: ${input.stock.marketCap}
 Forward P/E: ${input.stock.pe}
 Revenue growth: ${input.stock.revenue}
 Margin: ${input.stock.margin}
+Sector: ${input.stock.context?.sector || "Unavailable"}
+Industry: ${input.stock.context?.industry || "Unavailable"}
+Company description: ${input.stock.context?.description || "Unavailable"}
+Analyst target price: ${input.stock.context?.analystTargetPrice || "Unavailable"}
+52-week range: ${input.stock.context?.fiftyTwoWeekLow || "Unavailable"} to ${input.stock.context?.fiftyTwoWeekHigh || "Unavailable"}
+Recent news context: ${JSON.stringify(input.stock.context?.latestNews || [])}
 Lens: ${input.lens}
 Horizon: ${input.horizon}
 Risk tolerance: ${input.risk}/5
@@ -387,7 +744,7 @@ Risk tolerance: ${input.risk}/5
 Rules:
 - score must be an integer from 25 to 95.
 - drivers, risks, and checks must each contain exactly 3 concise strings.
-- Do not make up live news. Base the brief only on the provided metrics and durable business context.`;
+- Do not make up live news. Base the brief only on the provided metrics, company context, and listed news context.`;
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -437,7 +794,9 @@ Rules:
     lens: input.lens,
     horizon: input.horizon,
     chart: generatePath(input.stock, Number(brief.score)),
-    generatedBy: "openai"
+    generatedBy: "openai",
+    sources: input.stock.sources || [],
+    context: input.stock.context || {}
   };
 }
 
@@ -514,8 +873,8 @@ ${input.question}`;
 
 async function handleQuote(req, res, ticker) {
   try {
-    const stock = (await fetchAlphaVantageQuote(ticker)) || fallbackStock(ticker);
-    json(res, 200, { stock });
+    const { stock, warnings } = await buildStockSnapshot(ticker);
+    json(res, 200, { stock, warnings });
   } catch (error) {
     json(res, 200, { stock: fallbackStock(ticker), warning: error.message });
   }
@@ -525,7 +884,7 @@ async function handleResearch(req, res) {
   try {
     const body = await readBody(req);
     const ticker = normalizeTicker(body.ticker);
-    const stock = (await fetchAlphaVantageQuote(ticker)) || fallbackStock(ticker);
+    const { stock, warnings } = await buildStockSnapshot(ticker);
     const input = {
       stock,
       lens: body.lens || "balanced",
@@ -533,7 +892,7 @@ async function handleResearch(req, res) {
       risk: Number(body.risk || 3)
     };
     const brief = (await aiResearch(input)) || localResearch(input);
-    json(res, 200, { brief });
+    json(res, 200, { brief: { ...brief, warnings } });
   } catch (error) {
     json(res, 500, { error: error.message });
   }
@@ -554,6 +913,20 @@ async function handleChat(req, res) {
     json(res, 200, {
       answer,
       generatedBy: process.env.OPENAI_API_KEY ? "openai" : "local"
+    });
+  } catch (error) {
+    json(res, 500, { error: error.message });
+  }
+}
+
+async function handleRefresh(req, res) {
+  try {
+    const body = await readBody(req);
+    const tickers = Array.isArray(body.tickers) && body.tickers.length ? body.tickers : supportedTickers;
+    const refresh = await refreshTrustedStocks(tickers);
+    json(res, 200, {
+      refreshedAt: refresh.refreshedAt,
+      results: refresh.results
     });
   } catch (error) {
     json(res, 500, { error: error.message });
@@ -598,6 +971,11 @@ export const server = createServer(async (req, res) => {
 
   if (req.method === "POST" && url.pathname === "/api/chat") {
     await handleChat(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/refresh") {
+    await handleRefresh(req, res);
     return;
   }
 
