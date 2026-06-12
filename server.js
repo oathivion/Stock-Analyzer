@@ -8,8 +8,9 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 loadEnv();
 const port = Number(process.env.PORT || 3000);
 const cachePath = join(root, "data", "stocks.json");
+const lookupCachePath = join(root, "data", "lookups.json");
 const supportedTickers = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
-const cikByTicker = {
+const defaultCikByTicker = {
   AAPL: "0000320193",
   MSFT: "0000789019",
   NVDA: "0001045810",
@@ -19,6 +20,8 @@ const cikByTicker = {
   JPM: "0000019617",
   DIS: "0001744489"
 };
+let secTickerMap = { ...defaultCikByTicker };
+let secTickerMapUpdatedAt = 0;
 
 const demoStocks = {
   NVDA: {
@@ -318,13 +321,27 @@ function loadStockCache() {
   }
 }
 
+function loadLookupCache() {
+  if (!existsSync(lookupCachePath)) return {};
+  try {
+    return JSON.parse(readFileSync(lookupCachePath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
 async function saveStockCache(cache) {
   await mkdir(join(root, "data"), { recursive: true });
   await writeFile(cachePath, `${JSON.stringify(cache, null, 2)}\n`);
 }
 
+async function saveLookupCache(cache) {
+  await mkdir(join(root, "data"), { recursive: true });
+  await writeFile(lookupCachePath, `${JSON.stringify(cache, null, 2)}\n`);
+}
+
 function fallbackStock(ticker) {
-  const cached = loadStockCache()[ticker];
+  const cached = loadStockCache()[ticker] || loadLookupCache()[ticker];
   if (cached) {
     return {
       ...cached,
@@ -341,9 +358,41 @@ function fallbackStock(ticker) {
     };
   }
 
+  const demo = demoStocks[ticker];
+  if (!demo) {
+    return {
+      ticker,
+      name: ticker,
+      price: 0,
+      change: 0,
+      marketCap: "Not reported",
+      pe: "Not reported",
+      revenue: "Not reported",
+      margin: "Not reported",
+      score: 65,
+      verdict: "Research pending",
+      thesis: "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+      drivers: ["Review reported growth.", "Compare valuation with peers.", "Track cash flow and margins."],
+      risks: ["Provider coverage may vary by security.", "Market prices can change rapidly.", "Verify material developments in company filings."],
+      checks: ["Review the latest SEC filing.", "Confirm current valuation metrics.", "Compare recent price performance."],
+      source: "lookup",
+      sources: [],
+      context: {
+        sector: "Not classified",
+        industry: "Not classified",
+        description: `${ticker} company profile lookup.`,
+        analystTargetPrice: "No consensus",
+        dividendYield: "0.00%",
+        fiftyTwoWeekHigh: "Not reported",
+        fiftyTwoWeekLow: "Not reported",
+        latestNews: []
+      }
+    };
+  }
+
   return {
     ticker,
-    ...(demoStocks[ticker] || demoStocks.NVDA),
+    ...demo,
     source: "demo",
     sources: [
       {
@@ -405,9 +454,36 @@ function dedupeSources(sources = []) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetch(url, {
+    ...options,
+    signal: options.signal || AbortSignal.timeout(10000)
+  });
   if (!response.ok) throw new Error(`${url} returned ${response.status}.`);
   return response.json();
+}
+
+async function resolveSecCik(ticker) {
+  if (secTickerMap[ticker]) return secTickerMap[ticker];
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (Date.now() - secTickerMapUpdatedAt > oneDay) {
+    const userAgent = process.env.SEC_USER_AGENT || "StockAnalyzer/1.0 contact@example.com";
+    const data = await fetchJson("https://www.sec.gov/files/company_tickers.json", {
+      headers: {
+        "user-agent": userAgent,
+        accept: "application/json"
+      }
+    });
+    const entries = Array.isArray(data) ? data : Object.values(data || {});
+    secTickerMap = { ...defaultCikByTicker };
+    for (const entry of entries) {
+      if (!entry?.ticker || entry.cik_str === undefined) continue;
+      secTickerMap[String(entry.ticker).toUpperCase()] = String(entry.cik_str).padStart(10, "0");
+    }
+    secTickerMapUpdatedAt = Date.now();
+  }
+
+  return secTickerMap[ticker] || null;
 }
 
 async function fetchAlphaVantageQuote(ticker) {
@@ -460,10 +536,16 @@ async function fetchYahooQuote(ticker) {
 
   return {
     ...base,
+    name: meta.longName || meta.shortName || base.name,
     price,
     change: Number.isFinite(change) ? Number(change.toFixed(2)) : base.change,
     quoteSource: "Yahoo Finance",
     quoteUpdatedAt,
+    context: {
+      ...(base.context || {}),
+      fiftyTwoWeekHigh: Number.isFinite(Number(meta.fiftyTwoWeekHigh)) ? `$${Number(meta.fiftyTwoWeekHigh).toFixed(2)}` : base.context?.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: Number.isFinite(Number(meta.fiftyTwoWeekLow)) ? `$${Number(meta.fiftyTwoWeekLow).toFixed(2)}` : base.context?.fiftyTwoWeekLow
+    },
     source: base.source === "demo" ? "yahoo-finance" : base.source,
     sources: [
       ...(base.sources || []),
@@ -474,6 +556,141 @@ async function fetchYahooQuote(ticker) {
         detail: "No-key quote endpoint used for the current calculation price and daily percentage change."
       }
     ]
+  };
+}
+
+function nasdaqHeaders() {
+  return {
+    "user-agent": "Mozilla/5.0 (compatible; StockAnalyzer/1.0)",
+    accept: "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9"
+  };
+}
+
+async function fetchNasdaqProfile(ticker) {
+  const url = `https://api.nasdaq.com/api/company/${ticker}/company-profile`;
+  const data = await fetchJson(url, { headers: nasdaqHeaders() });
+  const profile = data.data;
+  if (!profile) return null;
+
+  return {
+    name: profile.CompanyName?.value || ticker,
+    context: {
+      sector: profile.Sector?.value || "Not classified",
+      industry: profile.Industry?.value || "Not classified",
+      description: profile.CompanyDescription?.value || `${profile.CompanyName?.value || ticker} company profile.`,
+      companyUrl: profile.CompanyUrl?.value || "",
+      address: profile.Address?.value || "",
+      region: profile.Region?.value || ""
+    },
+    sourceItem: {
+      title: "Company Profile",
+      provider: "Nasdaq",
+      url,
+      detail: "Company description, sector, industry, region, address, and corporate website."
+    }
+  };
+}
+
+async function fetchNasdaqAnalystTarget(ticker) {
+  const url = `https://api.nasdaq.com/api/analyst/${ticker}/targetprice`;
+  const data = await fetchJson(url, { headers: nasdaqHeaders() });
+  const consensus = data.data?.consensusOverview;
+  if (!consensus) return null;
+
+  return {
+    context: {
+      analystTargetPrice: Number.isFinite(Number(consensus.priceTarget)) ? `$${Number(consensus.priceTarget).toFixed(2)}` : "No consensus",
+      analystTargetLow: Number.isFinite(Number(consensus.lowPriceTarget)) ? `$${Number(consensus.lowPriceTarget).toFixed(2)}` : "No consensus",
+      analystTargetHigh: Number.isFinite(Number(consensus.highPriceTarget)) ? `$${Number(consensus.highPriceTarget).toFixed(2)}` : "No consensus",
+      analystBuyRatings: Number(consensus.buy || 0),
+      analystHoldRatings: Number(consensus.hold || 0),
+      analystSellRatings: Number(consensus.sell || 0)
+    },
+    sourceItem: {
+      title: "Analyst Price Targets",
+      provider: "Nasdaq",
+      url,
+      detail: "Consensus target range and current buy, hold, and sell counts."
+    }
+  };
+}
+
+async function fetchNasdaqDividend(ticker) {
+  const url = `https://api.nasdaq.com/api/quote/${ticker}/dividends?assetclass=stocks`;
+  const data = await fetchJson(url, { headers: nasdaqHeaders() });
+  const dividend = data.data;
+  if (!dividend) return null;
+  const rawYield = dividend.yield;
+  const dividendYield = /^\d+(\.\d+)?%$/.test(String(rawYield || "")) ? rawYield : "0.00%";
+  const cleanDividendDate = (value) => value && !["N/A", "--"].includes(value) ? value : "No scheduled dividend";
+
+  return {
+    context: {
+      dividendYield,
+      annualDividend: dividend.annualizedDividend && dividend.annualizedDividend !== "--" ? `$${dividend.annualizedDividend}` : "$0.00",
+      exDividendDate: cleanDividendDate(dividend.exDividendDate),
+      dividendPaymentDate: cleanDividendDate(dividend.dividendPaymentDate)
+    },
+    sourceItem: {
+      title: "Dividend History",
+      provider: "Nasdaq",
+      url,
+      detail: "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+    }
+  };
+}
+
+async function fetchNasdaqSummary(ticker) {
+  const url = `https://api.nasdaq.com/api/quote/${ticker}/summary?assetclass=stocks`;
+  const data = await fetchJson(url, { headers: nasdaqHeaders() });
+  const summary = data.data?.summaryData;
+  if (!summary) return null;
+  const marketCapValue = Number(String(summary.MarketCap?.value || "").replace(/,/g, ""));
+
+  return {
+    marketCap: Number.isFinite(marketCapValue) ? formatLargeNumber(marketCapValue) : undefined,
+    context: {
+      exchange: summary.Exchange?.value || "Not reported",
+      averageVolume: summary.AverageVolume?.value || "Not reported"
+    },
+    sourceItem: {
+      title: "Quote Summary",
+      provider: "Nasdaq",
+      url,
+      detail: "Market capitalization, exchange, volume, dividend, and trading-range summary."
+    }
+  };
+}
+
+async function fetchYahooHistory(ticker, horizon) {
+  const settings = {
+    "3 months": { range: "3mo", interval: "1d" },
+    "12 months": { range: "1y", interval: "1d" },
+    "3 years": { range: "3y", interval: "1wk" }
+  }[horizon] || { range: "1y", interval: "1d" };
+  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}`);
+  url.searchParams.set("range", settings.range);
+  url.searchParams.set("interval", settings.interval);
+  url.searchParams.set("events", "history");
+
+  const data = await fetchJson(url);
+  const result = data.chart?.result?.[0];
+  const timestamps = result?.timestamp || [];
+  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const points = timestamps
+    .map((timestamp, index) => ({ timestamp, close: Number(closes[index]) }))
+    .filter((point) => Number.isFinite(point.close));
+
+  if (!points.length) throw new Error(`No historical prices returned for ${ticker}.`);
+
+  return {
+    ticker,
+    horizon,
+    interval: settings.interval,
+    source: "Yahoo Finance",
+    updatedAt: new Date().toISOString(),
+    points
   };
 }
 
@@ -535,7 +752,7 @@ async function fetchAlphaVantageNews(ticker) {
 }
 
 async function fetchSecCompanyFacts(ticker) {
-  const cik = cikByTicker[ticker];
+  const cik = await resolveSecCik(ticker);
   if (!cik) return null;
 
   const userAgent = process.env.SEC_USER_AGENT || "StockAnalyzer/1.0 contact@example.com";
@@ -548,29 +765,43 @@ async function fetchSecCompanyFacts(ticker) {
   });
 
   const facts = data.facts?.["us-gaap"] || {};
-  const revenueFact = latestFact(facts.Revenues) || latestFact(facts.SalesRevenueNet);
-  const netIncomeFact = latestFact(facts.NetIncomeLoss);
-  const grossProfitFact = latestFact(facts.GrossProfit);
-  const assetsFact = latestFact(facts.Assets);
-  const liabilitiesFact = latestFact(facts.Liabilities);
-  const equityFact = latestFact(facts.StockholdersEquity);
-  const operatingCashFlowFact = latestFact(facts.NetCashProvidedByUsedInOperatingActivities);
+  const revenueFact = latestAnnualAcross([
+    facts.RevenueFromContractWithCustomerExcludingAssessedTax,
+    facts.Revenues,
+    facts.SalesRevenueNet
+  ]);
+  const netIncomeFact = latestAnnualFact(facts.NetIncomeLoss);
+  const grossProfitFact = latestAnnualFact(facts.GrossProfit);
+  const assetsFact = latestInstantFact(facts.Assets);
+  const liabilitiesFact = latestInstantFact(facts.Liabilities);
+  const equityFact = latestInstantFact(facts.StockholdersEquity);
+  const operatingCashFlowFact = latestAnnualFact(facts.NetCashProvidedByUsedInOperatingActivities);
+  const operatingIncomeFact = latestAnnualFact(facts.OperatingIncomeLoss);
+  const dilutedEpsFact = latestAnnualFactForUnit(facts.EarningsPerShareDiluted, "USD/shares");
 
   const revenue = revenueFact?.val;
   const grossProfit = grossProfitFact?.val;
 
+  const liabilities = liabilitiesFact?.val || (assetsFact?.val && equityFact?.val ? assetsFact.val - equityFact.val : null);
+
   return {
     revenue: revenue ? formatLargeNumber(revenue) : undefined,
-    margin: revenue && grossProfit ? formatPercent(grossProfit / revenue) : undefined,
+    margin: revenue && grossProfit
+      ? formatPercent(grossProfit / revenue)
+      : revenue && operatingIncomeFact?.val
+        ? formatPercent(operatingIncomeFact.val / revenue)
+        : undefined,
     context: {
       secCik: cik,
       secEntityName: data.entityName || "Unavailable",
       fiscalRevenue: revenue ? formatLargeNumber(revenue) : "Unavailable",
       fiscalNetIncome: netIncomeFact?.val ? formatLargeNumber(netIncomeFact.val) : "Unavailable",
       totalAssets: assetsFact?.val ? formatLargeNumber(assetsFact.val) : "Unavailable",
-      totalLiabilities: liabilitiesFact?.val ? formatLargeNumber(liabilitiesFact.val) : "Unavailable",
+      totalLiabilities: liabilities ? formatLargeNumber(liabilities) : "$0",
       stockholdersEquity: equityFact?.val ? formatLargeNumber(equityFact.val) : "Unavailable",
       operatingCashFlow: operatingCashFlowFact?.val ? formatLargeNumber(operatingCashFlowFact.val) : "Unavailable",
+      operatingIncome: operatingIncomeFact?.val ? formatLargeNumber(operatingIncomeFact.val) : "$0",
+      dilutedEps: dilutedEpsFact?.val ? Number(dilutedEpsFact.val) : null,
       latestFiscalPeriod: revenueFact?.fy ? `${revenueFact.fy}${revenueFact.fp ? ` ${revenueFact.fp}` : ""}` : "Unavailable",
       latestFilingDate: revenueFact?.filed || "Unavailable"
     },
@@ -583,17 +814,41 @@ async function fetchSecCompanyFacts(ticker) {
   };
 }
 
-function latestFact(concept) {
+function factCandidates(concept) {
   const usdFacts = concept?.units?.USD;
-  if (!Array.isArray(usdFacts)) return null;
+  if (!Array.isArray(usdFacts)) return [];
 
-  return usdFacts
-    .filter((fact) => fact.val !== undefined && fact.filed && !fact.frame?.includes("Q") && ["10-K", "10-Q", "20-F", "40-F"].includes(fact.form))
-    .sort((a, b) => {
-      const filed = String(b.filed).localeCompare(String(a.filed));
-      if (filed !== 0) return filed;
-      return Number(b.end?.replaceAll("-", "") || 0) - Number(a.end?.replaceAll("-", "") || 0);
-    })[0];
+  return usdFacts.filter((fact) => fact.val !== undefined && fact.filed && ["10-K", "10-Q", "20-F", "40-F"].includes(fact.form));
+}
+
+function unitFactCandidates(concept, unit) {
+  const facts = concept?.units?.[unit];
+  if (!Array.isArray(facts)) return [];
+  return facts.filter((fact) => fact.val !== undefined && fact.filed && ["10-K", "10-Q", "20-F", "40-F"].includes(fact.form));
+}
+
+function latestAnnualFact(concept) {
+  return factCandidates(concept)
+    .filter((fact) => fact.fp === "FY")
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+}
+
+function latestAnnualAcross(concepts) {
+  return concepts
+    .map(latestAnnualFact)
+    .filter(Boolean)
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+}
+
+function latestAnnualFactForUnit(concept, unit) {
+  return unitFactCandidates(concept, unit)
+    .filter((fact) => fact.fp === "FY")
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+}
+
+function latestInstantFact(concept) {
+  return factCandidates(concept)
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
 }
 
 async function buildStockSnapshot(ticker) {
@@ -661,6 +916,33 @@ async function buildStockSnapshot(ticker) {
     warnings.push(error.message);
   }
 
+  const nasdaqFetches = await Promise.allSettled([
+    fetchNasdaqProfile(ticker),
+    fetchNasdaqAnalystTarget(ticker),
+    fetchNasdaqDividend(ticker),
+    fetchNasdaqSummary(ticker)
+  ]);
+  for (const result of nasdaqFetches) {
+    if (result.status === "fulfilled" && result.value) {
+      stock = {
+        ...stock,
+        name: result.value.name || stock.name,
+        marketCap: result.value.marketCap || stock.marketCap,
+        context: { ...(stock.context || {}), ...(result.value.context || {}) },
+        sources: [...(stock.sources || []), result.value.sourceItem]
+      };
+    } else if (result.status === "rejected") {
+      warnings.push(result.reason?.message || "Nasdaq enrichment failed.");
+    }
+  }
+
+
+  const dilutedEps = Number(stock.context?.dilutedEps);
+  if ((!stock.pe || stock.pe === "Not reported") && Number.isFinite(dilutedEps) && dilutedEps > 0 && Number(stock.price) > 0) {
+    stock.pe = (Number(stock.price) / dilutedEps).toFixed(1);
+    stock.context = { ...(stock.context || {}), peMethod: "Current price divided by latest SEC diluted annual EPS" };
+  }
+
   return { stock: { ...stock, sources: dedupeSources(stock.sources) }, warnings };
 }
 
@@ -715,6 +997,17 @@ async function refreshTrustedStocks(tickers = supportedTickers) {
 
   await saveStockCache(cache);
   return { refreshedAt: new Date().toISOString(), results, cache };
+}
+
+async function saveLookupStock(stock, warnings = []) {
+  if (supportedTickers.includes(stock.ticker)) return;
+  const cache = loadLookupCache();
+  cache[stock.ticker] = {
+    ...stock,
+    refreshedAt: new Date().toISOString(),
+    warnings
+  };
+  await saveLookupCache(cache);
 }
 
 function formatLargeNumber(value) {
@@ -908,9 +1201,23 @@ ${input.question}`;
 async function handleQuote(req, res, ticker) {
   try {
     const { stock, warnings } = await buildStockSnapshot(ticker);
+    await saveLookupStock(stock, warnings);
     json(res, 200, { stock, warnings });
   } catch (error) {
     json(res, 200, { stock: fallbackStock(ticker), warning: error.message });
+  }
+}
+
+async function handleLookup(req, res, ticker) {
+  try {
+    const { stock, warnings } = await buildStockSnapshot(ticker);
+    await saveLookupStock(stock, warnings);
+    json(res, 200, {
+      stock: { ...stock, warnings },
+      cachedSeparately: !supportedTickers.includes(ticker)
+    });
+  } catch (error) {
+    json(res, 500, { error: error.message });
   }
 }
 
@@ -923,11 +1230,7 @@ async function handleLivePrices(req, res) {
       .filter(Boolean)
       .slice(0, 25);
     const requested = tickers.length ? tickers : supportedTickers;
-    const results = [];
-
-    for (const ticker of requested) {
-      results.push(await buildLiveQuote(ticker));
-    }
+    const results = await Promise.all(requested.map((ticker) => buildLiveQuote(ticker)));
 
     json(res, 200, {
       updatedAt: new Date().toISOString(),
@@ -939,11 +1242,64 @@ async function handleLivePrices(req, res) {
   }
 }
 
+async function handleComparison(req, res) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const requested = (url.searchParams.get("tickers") || supportedTickers.join(","))
+      .split(",")
+      .map(normalizeTicker)
+      .filter(Boolean)
+      .slice(0, 25);
+    const lens = url.searchParams.get("lens") || "balanced";
+    const risk = Number(url.searchParams.get("risk") || 3);
+    const cache = loadStockCache();
+    const rows = requested.map((ticker) => {
+      const base = cache[ticker] || fallbackStock(ticker);
+      return {
+        ticker,
+        name: base.name,
+        price: base.price,
+        change: base.change,
+        quoteSource: base.quoteSource || base.source,
+        quoteUpdatedAt: base.quoteUpdatedAt || base.refreshedAt,
+        marketCap: base.marketCap,
+        pe: base.pe,
+        revenue: base.revenue,
+        margin: base.margin,
+        score: scoreFor(base, lens, risk),
+        source: base.source || "demo"
+      };
+    });
+
+    json(res, 200, {
+      updatedAt: new Date().toISOString(),
+      lens,
+      risk,
+      rows,
+      warnings: []
+    });
+  } catch (error) {
+    json(res, 500, { error: error.message });
+  }
+}
+
+async function handlePriceHistory(req, res, ticker) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const horizon = url.searchParams.get("horizon") || "12 months";
+    const history = await fetchYahooHistory(ticker, horizon);
+    json(res, 200, history);
+  } catch (error) {
+    json(res, 502, { error: error.message });
+  }
+}
+
 async function handleResearch(req, res) {
   try {
     const body = await readBody(req);
     const ticker = normalizeTicker(body.ticker);
     const { stock, warnings } = await buildStockSnapshot(ticker);
+    await saveLookupStock(stock, warnings);
     const input = {
       stock,
       lens: body.lens || "balanced",
@@ -1017,14 +1373,31 @@ async function serveStatic(req, res) {
 export const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const tickerMatch = url.pathname.match(/^\/api\/quote\/([^/]+)$/);
+  const lookupMatch = url.pathname.match(/^\/api\/lookup\/([^/]+)$/);
+  const historyMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);
 
   if (req.method === "GET" && tickerMatch) {
     await handleQuote(req, res, normalizeTicker(tickerMatch[1]));
     return;
   }
 
+  if (req.method === "GET" && lookupMatch) {
+    await handleLookup(req, res, normalizeTicker(lookupMatch[1]));
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/live-prices") {
     await handleLivePrices(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/compare") {
+    await handleComparison(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && historyMatch) {
+    await handlePriceHistory(req, res, normalizeTicker(historyMatch[1]));
     return;
   }
 

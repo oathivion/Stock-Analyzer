@@ -24,7 +24,7 @@
         </div>
 
         <form class="research-form" id="researchForm">
-          <label for="tickerInput">Ticker or company</label>
+          <label for="tickerInput">Stock ticker lookup</label>
           <div class="search-row">
             <input
               id="tickerInput"
@@ -40,7 +40,7 @@
               </svg>
             </button>
           </div>
-          <p id="tickerHint" class="hint">Try AAPL, MSFT, TSLA, AMZN, META, JPM, or DIS.</p>
+          <p id="tickerHint" class="hint">Enter any U.S.-listed ticker. Lookups stay separate from the eight-stock watchlist.</p>
 
           <fieldset>
             <legend>Research lens</legend>
@@ -136,10 +136,10 @@
 
           <article class="chart-panel">
             <div class="panel-header compact">
-              <h3>Price path</h3>
-              <span id="chartLabel">12M simulated</span>
+              <h3>Price history</h3>
+              <span id="chartLabel">Loading history...</span>
             </div>
-            <canvas id="priceChart" width="760" height="320" aria-label="Simulated stock price chart"></canvas>
+            <canvas id="priceChart" width="760" height="320" aria-label="Historical stock price chart"></canvas>
           </article>
         </section>
 
@@ -156,6 +156,38 @@
             <h3>Next Checks</h3>
             <ul id="checksList"></ul>
           </article>
+        </section>
+
+        <section class="comparison-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Peer Comparison</h3>
+              <p id="comparisonStatus">Loading watchlist comparison...</p>
+            </div>
+            <select id="comparisonSort" aria-label="Sort comparison">
+              <option value="score">Score</option>
+              <option value="change">Daily move</option>
+              <option value="pe">Forward P/E</option>
+              <option value="price">Price</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Price</th>
+                  <th>Today</th>
+                  <th>Market cap</th>
+                  <th>P/E</th>
+                  <th>Revenue</th>
+                  <th>Margin</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody id="comparisonBody"></tbody>
+            </table>
+          </div>
         </section>
 
         <section class="source-grid">
@@ -192,6 +224,6 @@
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20260612-lookup-fix"></script>
   </body>
 </html>

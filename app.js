@@ -13,6 +13,7 @@ const defaultWatchlist = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM",
 let activeTicker = "NVDA";
 let activeBrief = null;
 let currentRequest = 0;
+let historyRequest = 0;
 
 const form = document.querySelector("#researchForm");
 const tickerInput = document.querySelector("#tickerInput");
@@ -38,9 +39,13 @@ const downloadButton = document.querySelector("#downloadButton");
 const refreshButton = document.querySelector("#refreshButton");
 const refreshStatus = document.querySelector("#refreshStatus");
 const liveStatus = document.querySelector("#liveStatus");
+const comparisonBody = document.querySelector("#comparisonBody");
+const comparisonStatus = document.querySelector("#comparisonStatus");
+const comparisonSort = document.querySelector("#comparisonSort");
 const liveQuotes = {};
 const liveRefreshMs = 30000;
 let liveTimer = null;
+let comparisonRows = [];
 
 function getLens() {
   return new FormData(form).get("lens");
@@ -56,9 +61,17 @@ function getControls() {
 }
 
 function fallbackBrief(ticker) {
-  const stock = demoStocks[ticker] || demoStocks.NVDA;
+  const stock = demoStocks[ticker] || {
+    name: ticker,
+    price: 0,
+    change: 0,
+    marketCap: "Not reported",
+    pe: "Not reported",
+    revenue: "Not reported",
+    margin: "Not reported"
+  };
   return {
-    ticker: demoStocks[ticker] ? ticker : "NVDA",
+    ticker,
     ...stock,
     score: 68,
     verdict: "Demo brief ready",
@@ -79,7 +92,7 @@ function fallbackBrief(ticker) {
       dividendYield: "Unavailable",
       fiftyTwoWeekHigh: "Unavailable",
       fiftyTwoWeekLow: "Unavailable",
-      description: "Run the Node backend with provider keys to enrich this brief with source-backed fundamentals and recent news."
+      description: "Run the Node backend to enrich this symbol with source-backed fundamentals and market data."
     },
     sources: [
       {
@@ -114,6 +127,28 @@ async function requestResearch() {
   setLoading(true);
 
   try {
+    if (!defaultWatchlist.includes(controls.ticker)) {
+      const lookupResponse = await fetch(`/api/lookup/${encodeURIComponent(controls.ticker)}`);
+      if (!lookupResponse.ok) throw new Error(`Ticker lookup failed with ${lookupResponse.status}.`);
+      const lookupData = await lookupResponse.json();
+      if (requestId !== currentRequest) return;
+      const stock = lookupData.stock;
+      activeTicker = stock.ticker;
+      tickerInput.value = activeTicker;
+      render({
+        ...fallbackBrief(stock.ticker),
+        ...stock,
+        lens: controls.lens,
+        horizon: controls.horizon,
+        score: stock.score || 65,
+        verdict: stock.verdict || "Source-backed lookup ready",
+        thesis: stock.thesis || `${stock.name} has been loaded with current market, SEC, and Nasdaq data.`,
+        chart: generateLocalPath(stock.price, stock.score || 65)
+      });
+      requestPriceHistory(stock.ticker, controls.horizon);
+      verdictTitle.textContent = "Generating research brief...";
+    }
+
     const response = await fetch("/api/research", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -128,6 +163,7 @@ async function requestResearch() {
     activeTicker = data.brief.ticker;
     tickerInput.value = activeTicker;
     render(data.brief);
+    requestPriceHistory(data.brief.ticker, controls.horizon);
   } catch (error) {
     if (requestId !== currentRequest) return;
     const brief = fallbackBrief(controls.ticker);
@@ -144,8 +180,10 @@ function setLoading(isLoading) {
   form.classList.toggle("is-loading", isLoading);
   copyButton.disabled = isLoading;
   downloadButton.disabled = isLoading;
-  verdictTitle.textContent = isLoading ? "Researching..." : verdictTitle.textContent;
-  thesisText.textContent = isLoading ? "Gathering quote data, applying your research lens, and drafting the brief." : thesisText.textContent;
+  if (isLoading && defaultWatchlist.includes(getControls().ticker)) {
+    verdictTitle.textContent = "Researching...";
+    thesisText.textContent = "Gathering quote data, applying your research lens, and drafting the brief.";
+  }
 }
 
 function renderWatchlist() {
@@ -169,6 +207,67 @@ function renderWatchlist() {
     });
     watchlistGrid.appendChild(button);
   });
+}
+
+function numericValue(value) {
+  const parsed = Number.parseFloat(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function renderComparison() {
+  const sortKey = comparisonSort.value;
+  const rows = [...comparisonRows].sort((a, b) => numericValue(b[sortKey]) - numericValue(a[sortKey]));
+  comparisonBody.innerHTML = "";
+
+  rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.className = `comparison-row${row.ticker === activeTicker ? " active" : ""}`;
+    tr.tabIndex = 0;
+    tr.innerHTML = `
+      <td class="company-cell"><strong>${escapeHtml(row.ticker)}</strong><span>${escapeHtml(row.name)}</span></td>
+      <td>$${Number(row.price).toFixed(2)}</td>
+      <td class="${row.change >= 0 ? "gain" : "loss"}">${row.change >= 0 ? "+" : ""}${Number(row.change).toFixed(2)}%</td>
+      <td>${escapeHtml(row.marketCap)}</td>
+      <td>${escapeHtml(row.pe)}</td>
+      <td>${escapeHtml(row.revenue)}</td>
+      <td>${escapeHtml(row.margin)}</td>
+      <td class="table-score">${row.score}</td>
+    `;
+    const selectRow = () => {
+      activeTicker = row.ticker;
+      tickerInput.value = row.ticker;
+      requestResearch();
+    };
+    tr.addEventListener("click", selectRow);
+    tr.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectRow();
+      }
+    });
+    comparisonBody.appendChild(tr);
+  });
+}
+
+async function requestComparison() {
+  comparisonStatus.textContent = "Updating live peer comparison...";
+  const controls = getControls();
+
+  try {
+    const params = new URLSearchParams({
+      tickers: defaultWatchlist.join(","),
+      lens: controls.lens,
+      risk: String(controls.risk)
+    });
+    const response = await fetch(`/api/compare?${params}`);
+    if (!response.ok) throw new Error(`Comparison request failed with ${response.status}.`);
+    const data = await response.json();
+    comparisonRows = data.rows || [];
+    renderComparison();
+    comparisonStatus.textContent = `${controls.lens} lens - updated ${formatClock(data.updatedAt)}`;
+  } catch (error) {
+    comparisonStatus.textContent = `Comparison unavailable: ${error.message}`;
+  }
 }
 
 function renderList(target, items) {
@@ -318,7 +417,52 @@ function drawChart(brief) {
   ctx.font = "700 18px Inter, sans-serif";
   ctx.fillText(`$${series.at(-1).toFixed(2)}`, width - 124, pad + 18);
 
-  chartLabel.textContent = `${brief.horizon || "12 months"} simulated`;
+  if (brief.chartDates?.length) {
+    const firstDate = new Date(brief.chartDates[0] * 1000);
+    const lastDate = new Date(brief.chartDates.at(-1) * 1000);
+    const dateFormat = new Intl.DateTimeFormat([], { month: "short", day: "numeric", year: "2-digit" });
+    ctx.fillStyle = "#65716a";
+    ctx.font = "600 12px Inter, sans-serif";
+    ctx.fillText(dateFormat.format(firstDate), pad, height - 8);
+    const lastLabel = dateFormat.format(lastDate);
+    const labelWidth = ctx.measureText(lastLabel).width;
+    ctx.fillText(lastLabel, width - pad - labelWidth, height - 8);
+  }
+
+  chartLabel.textContent = brief.chartSource
+    ? `${brief.horizon || "12 months"} history - ${brief.chartSource}`
+    : `${brief.horizon || "12 months"} estimate`;
+}
+
+async function requestPriceHistory(ticker, horizon) {
+  const requestId = ++historyRequest;
+  chartLabel.textContent = `Loading ${horizon} history...`;
+
+  try {
+    const response = await fetch(`/api/history/${encodeURIComponent(ticker)}?horizon=${encodeURIComponent(horizon)}`);
+    if (!response.ok) throw new Error(`History request failed with ${response.status}.`);
+    const data = await response.json();
+    if (requestId !== historyRequest || activeTicker !== ticker) return;
+
+    const closes = data.points?.map((point) => point.close).filter(Number.isFinite) || [];
+    if (!closes.length) throw new Error("Historical price response was empty.");
+
+    if (activeBrief?.ticker === ticker) {
+      closes[closes.length - 1] = Number(activeBrief.price);
+      activeBrief = {
+        ...activeBrief,
+        chart: closes,
+        chartDates: data.points.map((point) => point.timestamp),
+        chartSource: data.source,
+        chartInterval: data.interval
+      };
+      drawChart(activeBrief);
+    }
+  } catch (error) {
+    if (requestId === historyRequest) {
+      chartLabel.textContent = `${horizon} estimate - history unavailable`;
+    }
+  }
 }
 
 function resetChat(brief) {
@@ -380,6 +524,7 @@ async function refreshTrustedData() {
     const warningCount = data.results?.reduce((count, item) => count + (item.warnings?.length || 0), 0) || 0;
     refreshStatus.textContent = `Refreshed ${refreshed} stocks. ${warningCount ? `${warningCount} provider warnings.` : "No provider warnings."}`;
     requestResearch();
+    requestComparison();
   } catch (error) {
     refreshStatus.textContent = `Refresh failed: ${error.message}`;
   } finally {
@@ -392,13 +537,17 @@ function applyLiveQuote(quote) {
   liveQuotes[quote.ticker] = quote;
 
   if (activeBrief?.ticker === quote.ticker) {
+    const existingChart = activeBrief.chart?.length ? [...activeBrief.chart] : null;
+    if (existingChart && activeBrief.chartSource) {
+      existingChart[existingChart.length - 1] = Number(quote.price);
+    }
     activeBrief = {
       ...activeBrief,
       price: quote.price,
       change: quote.change,
       quoteSource: quote.quoteSource,
       quoteUpdatedAt: quote.quoteUpdatedAt,
-      chart: generateLocalPath(quote.price, activeBrief.score)
+      chart: existingChart && activeBrief.chartSource ? existingChart : generateLocalPath(quote.price, activeBrief.score)
     };
     renderMarketStrip(activeBrief);
     drawChart(activeBrief);
@@ -407,11 +556,16 @@ function applyLiveQuote(quote) {
 
 async function refreshLivePrices() {
   try {
-    const response = await fetch(`/api/live-prices?tickers=${defaultWatchlist.join(",")}`);
+    const requestedTickers = [...new Set([...defaultWatchlist, activeTicker])];
+    const response = await fetch(`/api/live-prices?tickers=${requestedTickers.join(",")}`);
     if (!response.ok) throw new Error(`Live price request failed with ${response.status}.`);
     const data = await response.json();
     data.quotes?.forEach(applyLiveQuote);
     renderWatchlist();
+    if (comparisonRows.length) {
+      comparisonRows = comparisonRows.map((row) => ({ ...row, ...(liveQuotes[row.ticker] || {}) }));
+      renderComparison();
+    }
     const warningCount = data.warnings?.length || 0;
     liveStatus.textContent = `Live prices updated ${formatClock(data.updatedAt)}${warningCount ? ` with ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`;
   } catch (error) {
@@ -464,6 +618,7 @@ function render(brief) {
   renderSources(brief);
   drawChart(brief);
   renderWatchlist();
+  renderComparison();
   resetChat(brief);
 }
 
@@ -472,7 +627,10 @@ form.addEventListener("submit", (event) => {
   requestResearch();
 });
 
-form.addEventListener("change", requestResearch);
+form.addEventListener("change", () => {
+  requestResearch();
+  requestComparison();
+});
 
 chatForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -507,7 +665,9 @@ document.querySelector("#resetButton").addEventListener("click", () => {
 });
 
 refreshButton.addEventListener("click", refreshTrustedData);
+comparisonSort.addEventListener("change", renderComparison);
 
 render(fallbackBrief(activeTicker));
 requestResearch();
+requestComparison();
 startLivePrices();

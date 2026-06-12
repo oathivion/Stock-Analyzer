@@ -1,0 +1,430 @@
+{
+  "GOOGL": {
+    "ticker": "GOOGL",
+    "name": "Alphabet Inc.",
+    "price": 359.595,
+    "change": 0.51,
+    "marketCap": "$4.4T",
+    "pe": "33.3",
+    "revenue": "$403B",
+    "margin": "+32.0%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/GOOGL?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/GOOGL/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/GOOGL/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/GOOGL/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/GOOGL/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Technology",
+      "industry": "Computer Software: Programming, Data Processing",
+      "description": "Alphabet Inc offers various products and platforms in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America. It operates through Google Services, Google Cloud, and Other Bets segments. The Google Services segment provides products and services, including ads, Android, Chrome, devices, Gmail, Google Drive, Google Maps, Google Photos, Google Play, Search, and YouTube.",
+      "analystTargetPrice": "$427.46",
+      "dividendYield": "0.25%",
+      "fiftyTwoWeekHigh": "$408.61",
+      "fiftyTwoWeekLow": "$162.00",
+      "latestNews": [],
+      "secCik": "0001652044",
+      "secEntityName": "Alphabet Inc.",
+      "fiscalRevenue": "$403B",
+      "fiscalNetIncome": "$132B",
+      "totalAssets": "$704B",
+      "totalLiabilities": "$225B",
+      "stockholdersEquity": "$479B",
+      "operatingCashFlow": "$165B",
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-02-05",
+      "companyUrl": "https://www.abc.xyz",
+      "address": "1600 AMPHITHEATRE PARKWAY, MOUNTAIN VIEW, California, 94043, United States",
+      "region": "North America",
+      "analystTargetLow": "$349.94",
+      "analystTargetHigh": "$515.00",
+      "analystBuyRatings": 28,
+      "analystHoldRatings": 5,
+      "analystSellRatings": 0,
+      "annualDividend": "$0.88",
+      "exDividendDate": "06/08/2026",
+      "dividendPaymentDate": "06/15/2026",
+      "operatingIncome": "$129B",
+      "dilutedEps": 10.81,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "28,808,390",
+      "peMethod": "Current price divided by latest SEC diluted annual EPS"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T19:41:10.000Z",
+    "refreshedAt": "2026-06-12T19:41:16.004Z",
+    "warnings": []
+  },
+  "AVGO": {
+    "ticker": "AVGO",
+    "name": "Broadcom Inc.",
+    "price": 381.47,
+    "change": -1.06,
+    "marketCap": "$1.8T",
+    "pe": "79.9",
+    "revenue": "$64B",
+    "margin": "+67.8%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/AVGO?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001730168.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/AVGO/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/AVGO/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/AVGO/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/AVGO/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Technology",
+      "industry": "Semiconductors",
+      "description": "Broadcom Inc. (NASDAQ: AVGO) is a technology leader that designs, develops, and supplies semiconductors and infrastructure software for global organizations' complex, mission-critical needs. Broadcom combines long-term R&D investment with superb execution to deliver the best technology, at scale.",
+      "analystTargetPrice": "$510.25",
+      "dividendYield": "0.67%",
+      "fiftyTwoWeekHigh": "$495.00",
+      "fiftyTwoWeekLow": "$244.17",
+      "latestNews": [],
+      "secCik": "0001730168",
+      "secEntityName": "Broadcom Inc.",
+      "fiscalRevenue": "$64B",
+      "fiscalNetIncome": "$6B",
+      "totalAssets": "$179B",
+      "totalLiabilities": "$91B",
+      "stockholdersEquity": "$25B",
+      "operatingCashFlow": "$28B",
+      "operatingIncome": "$25B",
+      "dilutedEps": 4.77,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2025-12-18",
+      "companyUrl": "https://www.broadcom.com",
+      "address": "3421 HILLVIEW AVENUE, PALO ALTO, California, 94304, United States",
+      "region": "North America",
+      "analystTargetLow": "$390.00",
+      "analystTargetHigh": "$630.00",
+      "analystBuyRatings": 24,
+      "analystHoldRatings": 3,
+      "analystSellRatings": 0,
+      "annualDividend": "$2.6",
+      "exDividendDate": "03/23/2026",
+      "dividendPaymentDate": "03/31/2026",
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "24,612,947",
+      "peMethod": "Current price divided by latest SEC diluted annual EPS"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T19:42:34.000Z",
+    "refreshedAt": "2026-06-12T19:42:35.703Z",
+    "warnings": []
+  },
+  "KO": {
+    "ticker": "KO",
+    "name": "Coca-Cola Company (The)",
+    "price": 82.555,
+    "change": 0.03,
+    "marketCap": "$355B",
+    "pe": "27.2",
+    "revenue": "$48B",
+    "margin": "+61.6%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/KO?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000021344.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/KO/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/KO/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/KO/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/KO/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Consumer Staples",
+      "industry": "Beverages (Production/Distribution)",
+      "description": "The Coca-Cola Company (NYSE: KO) is a total beverage company with products sold in more than 200 countries and territories. Our company's purpose is to refresh the world and make a difference. We sell multiple billion-dollar brands across several beverage categories worldwide. Our portfolio of sparkling soft drink brands includes Coca-Cola, Sprite and Fanta. Our water, sports, coffee and tea brands include Dasani, smartwater, vitaminwater, Topo Chico, BODYARMOR, Powerade, Costa, Georgia, Fuze Tea, Gold Peak and Ayataka. Our juice, value-added dairy and plant-based beverage brands include Minute Maid, Simply, innocent, Del Valle, fairlife and Santa Clara. We're constantly transforming our portfolio, from reducing sugar in our drinks to bringing innovative new products to market. We seek to positively impact people's lives, communities and the planet through water replenishment, packaging recycling, sustainable sourcing practices and carbon emissions reductions across our value chain.",
+      "analystTargetPrice": "$87.63",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$84.04",
+      "fiftyTwoWeekLow": "$65.35",
+      "latestNews": [],
+      "secCik": "0000021344",
+      "secEntityName": "COCA COLA CO",
+      "fiscalRevenue": "$48B",
+      "fiscalNetIncome": "$13B",
+      "totalAssets": "$104B",
+      "totalLiabilities": "$71B",
+      "stockholdersEquity": "$34B",
+      "operatingCashFlow": "$7B",
+      "operatingIncome": "$14B",
+      "dilutedEps": 3.04,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-02-20",
+      "companyUrl": "https://www.coca-colacompany.com",
+      "address": "ONE COCA-COLA PLAZA, ATLANTA, Georgia, 30313, United States",
+      "region": "North America",
+      "analystTargetLow": "$76.00",
+      "analystTargetHigh": "$92.00",
+      "analystBuyRatings": 16,
+      "analystHoldRatings": 1,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "15,547,244",
+      "peMethod": "Current price divided by latest SEC diluted annual EPS"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T19:46:32.000Z",
+    "refreshedAt": "2026-06-12T19:46:34.103Z",
+    "warnings": []
+  },
+  "TM": {
+    "ticker": "TM",
+    "name": "Toyota Motor Corp Ltd Ord",
+    "price": 175.14,
+    "change": 0.11,
+    "marketCap": "$277B",
+    "pe": "54.2",
+    "revenue": "$235B",
+    "margin": "+6.0%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/TM?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001094517.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/TM/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/TM/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/TM/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/TM/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Industrials",
+      "industry": "Auto Manufacturing",
+      "description": "Toyota (NYSE:TM), creator of the Prius hybrid and the Mirai fuel cell vehicle, is committed to building vehicles for the way people live through our Toyota and Lexus brands, and directly employs nearly 64,000 people in North America (nearly 48,000 in the U.S. ). For almost 70 years, Toyota has assembled over 50 million cars and trucks in North America at the company's 14 manufacturing plants. In 2025, the company's plant in North Carolina began assembling automotive batteries for electrified vehicles. Through our more than 1,800 North American dealerships (nearly 1,500 in the U.S. ), Toyota sold more than 2.9 million cars and trucks (more than 2.5 million in the U.S. ) in 2025, of which more than 47 percent were electrified vehicles (full battery, hybrid, plug-in hybrid and fuel cell).",
+      "analystTargetPrice": "$230.00",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$248.90",
+      "fiftyTwoWeekLow": "$167.18",
+      "latestNews": [],
+      "secCik": "0001094517",
+      "secEntityName": "TOYOTA MOTOR CORP/",
+      "fiscalRevenue": "$235B",
+      "fiscalNetIncome": "$10B",
+      "totalAssets": "$377B",
+      "totalLiabilities": "$241B",
+      "stockholdersEquity": "$129B",
+      "operatingCashFlow": "$26B",
+      "operatingIncome": "$14B",
+      "dilutedEps": 3.23,
+      "latestFiscalPeriod": "2012 FY",
+      "latestFilingDate": "2013-06-24",
+      "companyUrl": "https://www.global.toyota",
+      "address": "1, TOYOTA-CHO, TOYOTA CITY, 471-8571, Japan",
+      "region": "Asia",
+      "analystTargetLow": "$230.00",
+      "analystTargetHigh": "$230.00",
+      "analystBuyRatings": 1,
+      "analystHoldRatings": 1,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "181,096",
+      "peMethod": "Current price divided by latest SEC diluted annual EPS"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T19:46:12.000Z",
+    "refreshedAt": "2026-06-12T19:46:54.428Z",
+    "warnings": []
+  }
+}

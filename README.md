@@ -32,13 +32,19 @@ SEC EDGAR company facts are used for reported fundamentals. Set `SEC_USER_AGENT`
 ## Endpoints
 
 - `GET /api/quote/:ticker`
+- `GET /api/lookup/:ticker`
 - `GET /api/live-prices?tickers=NVDA,AAPL,MSFT`
+- `GET /api/history/:ticker?horizon=12%20months`
+- `GET /api/compare?tickers=NVDA,AAPL,MSFT&lens=balanced&risk=3`
 - `POST /api/research`
 - `POST /api/chat`
 - `POST /api/refresh`
 
 `/api/research` returns the generated brief plus calculation price, quote source, quote timestamp, source metadata, company context, provider warnings, and chart data.
+`/api/lookup/:ticker` enriches an arbitrary U.S.-listed ticker and stores it in `data/lookups.json`. Lookup symbols are not added to the default watchlist or peer comparison.
 `/api/live-prices` returns lightweight quote updates for real-time UI refreshes without regenerating a full research brief.
+`/api/history/:ticker` returns real historical close prices for the selected research horizon.
+`/api/compare` returns trusted cached fundamentals and lens-adjusted peer scores immediately; the live-price feed updates quote fields in the table.
 `/api/refresh` updates the local trusted-source cache for the supported watchlist.
 
 Example research body:
