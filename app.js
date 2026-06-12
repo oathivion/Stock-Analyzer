@@ -37,6 +37,10 @@ const copyButton = document.querySelector("#copyButton");
 const downloadButton = document.querySelector("#downloadButton");
 const refreshButton = document.querySelector("#refreshButton");
 const refreshStatus = document.querySelector("#refreshStatus");
+const liveStatus = document.querySelector("#liveStatus");
+const liveQuotes = {};
+const liveRefreshMs = 30000;
+let liveTimer = null;
 
 function getLens() {
   return new FormData(form).get("lens");
@@ -85,6 +89,13 @@ function fallbackBrief(ticker) {
       }
     ]
   };
+}
+
+function formatClock(value) {
+  if (!value || value === "Unavailable") return "Unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
 }
 
 function generateLocalPath(price, score) {
@@ -141,13 +152,15 @@ function renderWatchlist() {
   watchlistGrid.innerHTML = "";
   defaultWatchlist.forEach((ticker) => {
     const stock = demoStocks[ticker];
+    const live = liveQuotes[ticker];
+    const change = live?.change ?? stock.change;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `watch-button${ticker === activeTicker ? " active" : ""}`;
     button.innerHTML = `
       <strong>${ticker}</strong>
       <span>${stock.name}</span>
-      <b class="${stock.change >= 0 ? "gain" : "loss"}">${stock.change >= 0 ? "+" : ""}${stock.change}%</b>
+      <b class="${change >= 0 ? "gain" : "loss"}">${change >= 0 ? "+" : ""}${change}%</b>
     `;
     button.addEventListener("click", () => {
       activeTicker = ticker;
@@ -174,7 +187,7 @@ function renderMarketStrip(brief) {
     ["Today", `${brief.change >= 0 ? "+" : ""}${brief.change}%`, brief.change >= 0 ? "gain" : "loss"],
     ["Market cap", brief.marketCap],
     ["Quote source", sourceLabel],
-    ["Quote time", brief.quoteUpdatedAt || "Unavailable"]
+    ["Quote time", formatClock(brief.quoteUpdatedAt)]
   ];
 
   marketStrip.innerHTML = values
@@ -374,6 +387,44 @@ async function refreshTrustedData() {
   }
 }
 
+function applyLiveQuote(quote) {
+  if (!quote || !quote.ticker) return;
+  liveQuotes[quote.ticker] = quote;
+
+  if (activeBrief?.ticker === quote.ticker) {
+    activeBrief = {
+      ...activeBrief,
+      price: quote.price,
+      change: quote.change,
+      quoteSource: quote.quoteSource,
+      quoteUpdatedAt: quote.quoteUpdatedAt,
+      chart: generateLocalPath(quote.price, activeBrief.score)
+    };
+    renderMarketStrip(activeBrief);
+    drawChart(activeBrief);
+  }
+}
+
+async function refreshLivePrices() {
+  try {
+    const response = await fetch(`/api/live-prices?tickers=${defaultWatchlist.join(",")}`);
+    if (!response.ok) throw new Error(`Live price request failed with ${response.status}.`);
+    const data = await response.json();
+    data.quotes?.forEach(applyLiveQuote);
+    renderWatchlist();
+    const warningCount = data.warnings?.length || 0;
+    liveStatus.textContent = `Live prices updated ${formatClock(data.updatedAt)}${warningCount ? ` with ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`;
+  } catch (error) {
+    liveStatus.textContent = `Live price update failed: ${error.message}`;
+  }
+}
+
+function startLivePrices() {
+  refreshLivePrices();
+  window.clearInterval(liveTimer);
+  liveTimer = window.setInterval(refreshLivePrices, liveRefreshMs);
+}
+
 function briefText() {
   const brief = activeBrief || fallbackBrief(activeTicker);
   return `${brief.name} (${brief.ticker})
@@ -459,3 +510,4 @@ refreshButton.addEventListener("click", refreshTrustedData);
 
 render(fallbackBrief(activeTicker));
 requestResearch();
+startLivePrices();

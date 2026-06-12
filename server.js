@@ -664,6 +664,40 @@ async function buildStockSnapshot(ticker) {
   return { stock: { ...stock, sources: dedupeSources(stock.sources) }, warnings };
 }
 
+async function buildLiveQuote(ticker) {
+  const warnings = [];
+
+  try {
+    const quote = (await fetchAlphaVantageQuote(ticker)) || (await fetchYahooQuote(ticker));
+    if (quote) {
+      return {
+        quote: {
+          ticker,
+          price: quote.price,
+          change: quote.change,
+          quoteSource: quote.quoteSource,
+          quoteUpdatedAt: quote.quoteUpdatedAt
+        },
+        warnings
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  const fallback = fallbackStock(ticker);
+  return {
+    quote: {
+      ticker,
+      price: fallback.price,
+      change: fallback.change,
+      quoteSource: fallback.quoteSource || fallback.source || "fallback",
+      quoteUpdatedAt: fallback.quoteUpdatedAt || fallback.refreshedAt || "Unavailable"
+    },
+    warnings
+  };
+}
+
 async function refreshTrustedStocks(tickers = supportedTickers) {
   const cache = loadStockCache();
   const results = [];
@@ -880,6 +914,31 @@ async function handleQuote(req, res, ticker) {
   }
 }
 
+async function handleLivePrices(req, res) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const tickers = (url.searchParams.get("tickers") || "")
+      .split(",")
+      .map(normalizeTicker)
+      .filter(Boolean)
+      .slice(0, 25);
+    const requested = tickers.length ? tickers : supportedTickers;
+    const results = [];
+
+    for (const ticker of requested) {
+      results.push(await buildLiveQuote(ticker));
+    }
+
+    json(res, 200, {
+      updatedAt: new Date().toISOString(),
+      quotes: results.map((result) => result.quote),
+      warnings: results.flatMap((result) => result.warnings)
+    });
+  } catch (error) {
+    json(res, 500, { error: error.message });
+  }
+}
+
 async function handleResearch(req, res) {
   try {
     const body = await readBody(req);
@@ -961,6 +1020,11 @@ export const server = createServer(async (req, res) => {
 
   if (req.method === "GET" && tickerMatch) {
     await handleQuote(req, res, normalizeTicker(tickerMatch[1]));
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/live-prices") {
+    await handleLivePrices(req, res);
     return;
   }
 

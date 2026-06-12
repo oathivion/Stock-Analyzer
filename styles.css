@@ -248,6 +248,24 @@ input:disabled {
   gap: 10px;
 }
 
+.live-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aebbb3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #75d4a3;
+  box-shadow: 0 0 0 4px rgba(117, 212, 163, 0.12);
+  flex: 0 0 auto;
+}
+
 .text-button:disabled {
   cursor: wait;
   opacity: 0.62;

@@ -32,11 +32,13 @@ SEC EDGAR company facts are used for reported fundamentals. Set `SEC_USER_AGENT`
 ## Endpoints
 
 - `GET /api/quote/:ticker`
+- `GET /api/live-prices?tickers=NVDA,AAPL,MSFT`
 - `POST /api/research`
 - `POST /api/chat`
 - `POST /api/refresh`
 
 `/api/research` returns the generated brief plus calculation price, quote source, quote timestamp, source metadata, company context, provider warnings, and chart data.
+`/api/live-prices` returns lightweight quote updates for real-time UI refreshes without regenerating a full research brief.
 `/api/refresh` updates the local trusted-source cache for the supported watchlist.
 
 Example research body:
