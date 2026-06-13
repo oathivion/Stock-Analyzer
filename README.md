@@ -2,6 +2,8 @@
 
 A dependency-free stock research assistant prototype with a Node backend and a responsive browser UI.
 
+The research view includes a transparent Purchase Fit Score combining the research score (45%), reported revenue growth (30%), selected risk match (15%), and investment-horizon fit (10%). The weighted score then applies a `1.3x` penalty to points below 100, making the result roughly 30% stricter. It is a research-fit indicator, not personalized financial advice.
+
 ## Run
 
 ```powershell
@@ -13,6 +15,17 @@ Then open:
 ```text
 http://localhost:3000
 ```
+
+## Render Deployment
+
+The included `render.yaml` deploys the full Node application as a Render web service.
+
+1. Push the repository to GitHub.
+2. In Render, create a new Blueprint and select this repository.
+3. Set `SEC_USER_AGENT` to a real app/contact string.
+4. Optionally set `OPENAI_API_KEY` and `ALPHA_VANTAGE_API_KEY`.
+
+Render supplies `PORT` automatically. The service health check is available at `/health`.
 
 ## Optional API Keys
 
@@ -44,7 +57,7 @@ SEC EDGAR company facts are used for reported fundamentals. Set `SEC_USER_AGENT`
 `/api/lookup/:ticker` enriches an arbitrary U.S.-listed ticker and stores it in `data/lookups.json`. Lookup symbols are not added to the default watchlist or peer comparison.
 `/api/live-prices` returns lightweight quote updates for real-time UI refreshes without regenerating a full research brief.
 `/api/history/:ticker` returns real historical close prices for the selected research horizon.
-`/api/compare` returns trusted cached fundamentals and lens-adjusted peer scores immediately; the live-price feed updates quote fields in the table.
+`/api/compare` returns trusted cached fundamentals, research scores, and purchase-fit scores immediately; the live-price feed updates quote fields in the table.
 `/api/refresh` updates the local trusted-source cache for the supported watchlist.
 
 Example research body:

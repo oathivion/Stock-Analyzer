@@ -22,6 +22,10 @@ const companyName = document.querySelector("#companyName");
 const marketStrip = document.querySelector("#marketStrip");
 const verdictTitle = document.querySelector("#verdictTitle");
 const scorePill = document.querySelector("#scorePill");
+const purchaseScore = document.querySelector("#purchaseScore");
+const purchaseLabel = document.querySelector("#purchaseLabel");
+const purchaseDescription = document.querySelector("#purchaseDescription");
+const purchaseComponents = document.querySelector("#purchaseComponents");
 const thesisText = document.querySelector("#thesisText");
 const metricGrid = document.querySelector("#metricGrid");
 const driversList = document.querySelector("#driversList");
@@ -214,6 +218,65 @@ function numericValue(value) {
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
+function clamp(value, minimum, maximum) {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+function calculatePurchaseFit(brief) {
+  const controls = getControls();
+  const researchScore = Number(brief.score) || 65;
+  const growthPercent = Number(brief.context?.revenueGrowthPercent || 0);
+  const growthScore = clamp(50 + growthPercent * 1.25, 10, 100);
+  const price = Number(brief.price) || 0;
+  const high = numericValue(brief.context?.fiftyTwoWeekHigh);
+  const low = numericValue(brief.context?.fiftyTwoWeekLow);
+  const rangePercent = price > 0 && Number.isFinite(high) && Number.isFinite(low) ? ((high - low) / price) * 100 : 50;
+  let riskLevel = rangePercent <= 25 ? 1 : rangePercent <= 45 ? 2 : rangePercent <= 70 ? 3 : rangePercent <= 100 ? 4 : 5;
+  const pe = Number.parseFloat(brief.pe);
+  if (Number.isFinite(pe) && pe > 45) riskLevel = Math.min(5, riskLevel + 1);
+  const riskFit = clamp(100 - Math.abs(controls.risk - riskLevel) * 22, 20, 100);
+  const horizonFit = controls.horizon === "3 months"
+    ? clamp(104 - riskLevel * 14, 30, 95)
+    : controls.horizon === "3 years"
+      ? clamp(62 + growthScore * 0.32 - riskLevel * 2, 45, 96)
+      : clamp(82 - Math.abs(riskLevel - 3) * 7 + growthScore * 0.08, 45, 95);
+  const rawScore = researchScore * 0.45 + growthScore * 0.30 + riskFit * 0.15 + horizonFit * 0.10;
+  const score = Math.round(clamp(100 - (100 - rawScore) * 1.3, 0, 100));
+
+  return {
+    score,
+    rawScore: Math.round(rawScore),
+    strictnessMultiplier: 1.3,
+    label: score >= 80 ? "Strong fit" : score >= 65 ? "Good fit" : score >= 50 ? "Watch closely" : "Weak fit",
+    growthPercent,
+    estimatedRiskLevel: riskLevel,
+    selectedRisk: controls.risk,
+    horizon: controls.horizon,
+    components: {
+      research: Math.round(researchScore),
+      growth: Math.round(growthScore),
+      riskFit: Math.round(riskFit),
+      horizonFit: Math.round(horizonFit)
+    }
+  };
+}
+
+function renderPurchaseFit(brief) {
+  const fit = brief.purchaseFit || calculatePurchaseFit(brief);
+  purchaseScore.textContent = fit.score;
+  purchaseLabel.textContent = fit.label;
+  purchaseDescription.textContent = `${fit.growthPercent >= 0 ? "+" : ""}${Number(fit.growthPercent).toFixed(1)}% reported revenue growth, risk level ${fit.estimatedRiskLevel}/5, ${fit.horizon} horizon. Uses a 1.3x downside penalty. Research fit only, not a recommendation.`;
+  const components = [
+    ["Research 45%", fit.components.research],
+    ["Growth 30%", fit.components.growth],
+    ["Risk match 15%", fit.components.riskFit],
+    ["Time fit 10%", fit.components.horizonFit]
+  ];
+  purchaseComponents.innerHTML = components
+    .map(([label, value]) => `<div class="purchase-component"><span>${label}</span><strong>${value}</strong></div>`)
+    .join("");
+}
+
 function renderComparison() {
   const sortKey = comparisonSort.value;
   const rows = [...comparisonRows].sort((a, b) => numericValue(b[sortKey]) - numericValue(a[sortKey]));
@@ -232,6 +295,7 @@ function renderComparison() {
       <td>${escapeHtml(row.revenue)}</td>
       <td>${escapeHtml(row.margin)}</td>
       <td class="table-score">${row.score}</td>
+      <td class="table-score">${row.purchaseFit?.score ?? "--"}</td>
     `;
     const selectRow = () => {
       activeTicker = row.ticker;
@@ -257,7 +321,8 @@ async function requestComparison() {
     const params = new URLSearchParams({
       tickers: defaultWatchlist.join(","),
       lens: controls.lens,
-      risk: String(controls.risk)
+      risk: String(controls.risk),
+      horizon: controls.horizon
     });
     const response = await fetch(`/api/compare?${params}`);
     if (!response.ok) throw new Error(`Comparison request failed with ${response.status}.`);
@@ -297,6 +362,7 @@ function renderMarketStrip(brief) {
 function renderMetrics(brief) {
   const values = [
     ["Revenue", brief.revenue],
+    ["Revenue growth", brief.context?.revenueGrowth || "Not reported"],
     ["Gross margin", brief.margin],
     ["Sector", brief.context?.sector || "Unavailable"],
     ["Industry", brief.context?.industry || "Unavailable"]
@@ -549,7 +615,9 @@ function applyLiveQuote(quote) {
       quoteUpdatedAt: quote.quoteUpdatedAt,
       chart: existingChart && activeBrief.chartSource ? existingChart : generateLocalPath(quote.price, activeBrief.score)
     };
+    activeBrief.purchaseFit = calculatePurchaseFit(activeBrief);
     renderMarketStrip(activeBrief);
+    renderPurchaseFit(activeBrief);
     drawChart(activeBrief);
   }
 }
@@ -581,11 +649,14 @@ function startLivePrices() {
 
 function briefText() {
   const brief = activeBrief || fallbackBrief(activeTicker);
+  const fit = brief.purchaseFit || calculatePurchaseFit(brief);
   return `${brief.name} (${brief.ticker})
 Calculation price: $${Number(brief.price).toFixed(2)}
 Quote source: ${brief.quoteSource || brief.source || "Local fallback"}
 Quote time: ${brief.quoteUpdatedAt || "Unavailable"}
 Score: ${brief.score}
+Purchase fit: ${fit.score} (${fit.label})
+Reported revenue growth: ${fit.growthPercent >= 0 ? "+" : ""}${Number(fit.growthPercent).toFixed(1)}%
 Verdict: ${brief.verdict}
 
 ${brief.thesis}
@@ -608,6 +679,7 @@ function render(brief) {
   companyName.textContent = brief.name;
   verdictTitle.textContent = brief.verdict;
   scorePill.textContent = brief.score;
+  renderPurchaseFit(brief);
   thesisText.textContent = brief.thesis;
   renderMarketStrip(brief);
   renderMetrics(brief);

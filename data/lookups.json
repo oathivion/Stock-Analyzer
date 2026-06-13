@@ -323,9 +323,9 @@
   "TM": {
     "ticker": "TM",
     "name": "Toyota Motor Corp Ltd Ord",
-    "price": 175.14,
-    "change": 0.11,
-    "marketCap": "$277B",
+    "price": 174.99,
+    "change": 0.02,
+    "marketCap": "$276B",
     "pe": "54.2",
     "revenue": "$235B",
     "margin": "+6.0%",
@@ -423,8 +423,733 @@
       "peMethod": "Current price divided by latest SEC diluted annual EPS"
     },
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:46:12.000Z",
-    "refreshedAt": "2026-06-12T19:46:54.428Z",
+    "quoteUpdatedAt": "2026-06-12T19:59:54.000Z",
+    "refreshedAt": "2026-06-12T20:02:47.669Z",
+    "warnings": []
+  },
+  "GO": {
+    "ticker": "GO",
+    "name": "Grocery Outlet Holding Corp.",
+    "price": 9.58,
+    "change": 1.7,
+    "marketCap": "$948M",
+    "pe": "Not reported",
+    "revenue": "$5B",
+    "margin": "+30.3%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/GO?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001771515.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/GO/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/GO/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/GO/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/GO/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Consumer Staples",
+      "industry": "Food Chains",
+      "description": "Based in Emeryville, California, Grocery Outlet is a growth-oriented extreme value retailer of quality, name-brand consumables and fresh products sold primarily through a network of independently operated stores. Grocery Outlet and its subsidiaries have more than 540 stores in California, Washington, Oregon, Pennsylvania, Tennessee, Nevada, Idaho, North Carolina, Maryland, Ohio, Georgia, Virginia, New Jersey, Alabama, Delaware and Kentucky.",
+      "analystTargetPrice": "$9.71",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$19.41",
+      "fiftyTwoWeekLow": "$5.66",
+      "latestNews": [],
+      "secCik": "0001771515",
+      "secEntityName": "Grocery Outlet Holding Corp.",
+      "fiscalRevenue": "$5B",
+      "fiscalNetIncome": null,
+      "totalAssets": "$3B",
+      "totalLiabilities": "$2B",
+      "stockholdersEquity": "$807M",
+      "operatingCashFlow": "$222M",
+      "operatingIncome": null,
+      "dilutedEps": -2.3,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-03-04",
+      "companyUrl": "https://www.groceryoutlet.com",
+      "address": "5650 HOLLIS STREET, EMERYVILLE, California, 94608, United States",
+      "region": "North America",
+      "analystTargetLow": "$8.00",
+      "analystTargetHigh": "$14.00",
+      "analystBuyRatings": 0,
+      "analystHoldRatings": 7,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "3,115,457"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z",
+    "refreshedAt": "2026-06-13T03:29:46.800Z",
+    "warnings": []
+  },
+  "CO": {
+    "ticker": "CO",
+    "name": "CO",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-13T03:29:58.399Z."
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "CO company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "refreshedAt": "2026-06-13T03:29:58.583Z",
+    "warnings": [
+      "https://query1.finance.yahoo.com/v8/finance/chart/CO?range=1d&interval=1m returned 404."
+    ]
+  },
+  "CX": {
+    "ticker": "CX",
+    "name": "Cemex S.A.B. de C.V.",
+    "price": 12.98,
+    "change": 2.2,
+    "marketCap": "$20B",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/CX?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001076378.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/CX/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/CX/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/CX/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/CX/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Industrials",
+      "industry": "Building Materials",
+      "description": "Cemex is a multinational construction materials company focused on building a better future for communities worldwide. The company produces and markets cement, ready-mix concrete, aggregates, and related construction materials such as admixtures and mortars, enabling construction projects across its markets. Through customer-centric solutions, operational excellence, and continuous innovation, Cemex delivers high-performance materials that meet the industry's evolving needs. With a workforce of around 40,000 people worldwide, Cemex provides reliable, sustainable, and high-quality products and services, partnering with its customers to deliver solutions that create long-term value. For more information, visit cemex.com and connect with us on LinkedIn.",
+      "analystTargetPrice": "$14.16",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$13.67",
+      "fiftyTwoWeekLow": "$6.63",
+      "latestNews": [],
+      "secCik": "0001076378",
+      "secEntityName": "CEMEX SAB DE CV",
+      "fiscalRevenue": "Unavailable",
+      "fiscalNetIncome": "Unavailable",
+      "totalAssets": "Unavailable",
+      "totalLiabilities": "$0",
+      "stockholdersEquity": "Unavailable",
+      "operatingCashFlow": "Unavailable",
+      "operatingIncome": "$0",
+      "dilutedEps": null,
+      "latestFiscalPeriod": "Unavailable",
+      "latestFilingDate": "Unavailable",
+      "companyUrl": "https://www.cemex.com",
+      "address": "AVENIDA RICARDO MARGIN ZOZAYA #325,COLONIA VALLE DEL CAMPESTRE, SAN PEDRO GARZA GARCA, 66265, Mexico",
+      "region": "North America",
+      "analystTargetLow": "$12.75",
+      "analystTargetHigh": "$15.00",
+      "analystBuyRatings": 6,
+      "analystHoldRatings": 1,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "7,585,398",
+      "priorFiscalRevenue": "Not reported",
+      "revenueGrowthPercent": 0,
+      "revenueGrowth": "+0.0%"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:02.000Z",
+    "refreshedAt": "2026-06-13T18:03:50.139Z",
+    "warnings": []
+  },
+  "TY": {
+    "ticker": "TY",
+    "name": "Tri Continental Corporation",
+    "price": 35.16,
+    "change": 0.8,
+    "marketCap": "$2B",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/TY?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000099614.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/TY/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/TY/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/TY/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Finance",
+      "industry": "Finance Companies",
+      "description": "Tri-Continental Corp is a United States based closed-end management investment company. The Fund invests primarily for the longer term and has no charter restrictions with respect to its investments.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$35.65",
+      "fiftyTwoWeekLow": "$30.40",
+      "latestNews": [],
+      "secCik": "0000099614",
+      "secEntityName": "Unavailable",
+      "fiscalRevenue": "Unavailable",
+      "priorFiscalRevenue": "Not reported",
+      "revenueGrowthPercent": 0,
+      "revenueGrowth": "+0.0%",
+      "fiscalNetIncome": "Unavailable",
+      "totalAssets": "Unavailable",
+      "totalLiabilities": "$0",
+      "stockholdersEquity": "Unavailable",
+      "operatingCashFlow": "Unavailable",
+      "operatingIncome": "$0",
+      "dilutedEps": null,
+      "latestFiscalPeriod": "Unavailable",
+      "latestFilingDate": "Unavailable",
+      "companyUrl": "https://www.columbiathreadneedleus.com",
+      "address": "100 PARK AVENUE,,8TH FLOOR, NEW YORK, Massachusetts, 10017, United States",
+      "region": "North America",
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "58,221"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:02.000Z",
+    "refreshedAt": "2026-06-13T18:04:00.547Z",
+    "warnings": []
+  },
+  "TOY": {
+    "ticker": "TOY",
+    "name": "TOY",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-13T18:04:04.359Z."
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "TOY company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "refreshedAt": "2026-06-13T18:04:04.527Z",
+    "warnings": []
+  },
+  "COK": {
+    "ticker": "COK",
+    "name": "COK",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-13T18:04:15.033Z."
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "COK company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "refreshedAt": "2026-06-13T18:04:15.298Z",
+    "warnings": []
+  },
+  "CK": {
+    "ticker": "CK",
+    "name": "CK",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-13T18:04:18.070Z."
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "CK company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "refreshedAt": "2026-06-13T18:04:18.271Z",
+    "warnings": []
+  },
+  "FLY": {
+    "ticker": "FLY",
+    "name": "Firefly Aerospace Inc.",
+    "price": 31.87,
+    "change": -19.05,
+    "marketCap": "$5B",
+    "pe": "Not reported",
+    "revenue": "$160M",
+    "margin": "+19.2%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/FLY?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001860160.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/FLY/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/FLY/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/FLY/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/FLY/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Industrials",
+      "industry": "Military/Government/Technical",
+      "description": "Firefly Aerospace is a space and defense technology company on a mission to reliably and repeatedly launch, land, and operate space systems from Earth to the Moon and beyond. As the partner of choice for responsive space missions, Firefly is the first commercial company to launch a satellite to orbit with approximately 24-hour notice and the first to achieve a successful landing on the Moon. Established in 2017, Fireflys engineering, manufacturing, and test facilities are co-located in central Texas to enable rapid innovation and vertical integration for the companys small- to medium-lift launch vehicles, lunar landers, and orbital vehicles.",
+      "analystTargetPrice": "$42.00",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$73.80",
+      "fiftyTwoWeekLow": "$16.00",
+      "latestNews": [],
+      "secCik": "0001860160",
+      "secEntityName": "Firefly Aerospace Inc.",
+      "fiscalRevenue": "$160M",
+      "priorFiscalRevenue": "$61M",
+      "revenueGrowthPercent": 163,
+      "revenueGrowth": "+163.0%",
+      "fiscalNetIncome": null,
+      "totalAssets": "$1B",
+      "totalLiabilities": "$387M",
+      "stockholdersEquity": "Unavailable",
+      "operatingCashFlow": null,
+      "operatingIncome": null,
+      "dilutedEps": -4.83,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-03-20",
+      "companyUrl": "https://www.fireflyspace.com",
+      "address": "2203 SCOTTSDALE DRIVE, LEANDER, Texas, 78641, United States",
+      "region": "North America",
+      "analystTargetLow": "$35.00",
+      "analystTargetHigh": "$60.00",
+      "analystBuyRatings": 5,
+      "analystHoldRatings": 3,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NASDAQ-GM",
+      "averageVolume": "7,702,450"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z",
+    "refreshedAt": "2026-06-13T18:06:11.320Z",
+    "warnings": []
+  },
+  "SPCE": {
+    "ticker": "SPCE",
+    "name": "Virgin Galactic Holdings, Inc.",
+    "price": 3.91,
+    "change": -31.76,
+    "marketCap": "$420M",
+    "pe": "Not reported",
+    "revenue": "$2M",
+    "margin": "+195.6%",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/SPCE?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001706946.json",
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/SPCE/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website."
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/SPCE/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts."
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/SPCE/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/SPCE/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+      }
+    ],
+    "context": {
+      "sector": "Consumer Discretionary",
+      "industry": "Transportation Services",
+      "description": "Virgin Galactic is an aerospace and space travel company, pioneering human-first spaceflight for private individuals, researchers, and governments with its advanced SpaceShips and Launch Vehicle. Scale and profitability are driven by next generation vehicles capable of taking humans to space at an unprecedented frequency with an industry-leading cost structure. You can find more information at https://www.virgingalactic.com.",
+      "analystTargetPrice": "$3.61",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$8.90",
+      "fiftyTwoWeekLow": "$2.13",
+      "latestNews": [],
+      "secCik": "0001706946",
+      "secEntityName": "Virgin Galactic Holdings, Inc",
+      "fiscalRevenue": "$2M",
+      "priorFiscalRevenue": "$7M",
+      "revenueGrowthPercent": -78.1,
+      "revenueGrowth": "-78.1%",
+      "fiscalNetIncome": null,
+      "totalAssets": "$750M",
+      "totalLiabilities": "$527M",
+      "stockholdersEquity": "$224M",
+      "operatingCashFlow": null,
+      "operatingIncome": null,
+      "dilutedEps": -5.44,
+      "latestFiscalPeriod": "2025 FY",
+      "latestFilingDate": "2026-03-30",
+      "companyUrl": "https://www.virgingalactic.com",
+      "address": "1700 FLIGHT WAY, TUSTIN, California, 92782, United States",
+      "region": "North America",
+      "analystTargetLow": "$2.05",
+      "analystTargetHigh": "$5.00",
+      "analystBuyRatings": 2,
+      "analystHoldRatings": 3,
+      "analystSellRatings": 1,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "16,576,288"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:03.000Z",
+    "refreshedAt": "2026-06-13T18:12:18.781Z",
     "warnings": []
   }
 }

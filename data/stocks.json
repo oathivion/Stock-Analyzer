@@ -2,9 +2,9 @@
   "NVDA": {
     "ticker": "NVDA",
     "name": "NVIDIA Corporation",
-    "price": 204.85,
-    "change": -0.01,
-    "marketCap": "$3.1T",
+    "price": 205.19,
+    "change": 0.16,
+    "marketCap": "$5.0T",
     "pe": "38.7",
     "revenue": "$216B",
     "margin": "+71.1%",
@@ -62,6 +62,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/NVDA/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/NVDA/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -71,7 +77,7 @@
       "analystTargetPrice": "$311.41",
       "dividendYield": "0.49%",
       "fiftyTwoWeekHigh": "$236.54",
-      "fiftyTwoWeekLow": "$140.85",
+      "fiftyTwoWeekLow": "$142.03",
       "latestNews": [],
       "secCik": "0001045810",
       "secEntityName": "NVIDIA CORP",
@@ -93,19 +99,26 @@
       "analystSellRatings": 1,
       "annualDividend": "$1",
       "exDividendDate": "06/04/2026",
-      "dividendPaymentDate": "06/26/2026"
+      "dividendPaymentDate": "06/26/2026",
+      "priorFiscalRevenue": "$130B",
+      "revenueGrowthPercent": 65.5,
+      "revenueGrowth": "+65.5%",
+      "operatingIncome": "$130B",
+      "dilutedEps": 4.9,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "159,779,029"
     },
-    "refreshedAt": "2026-06-12T19:28:49.675Z",
+    "refreshedAt": "2026-06-13T17:59:35.215Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:28:48.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:00.000Z"
   },
   "AAPL": {
     "ticker": "AAPL",
     "name": "Apple Inc.",
-    "price": 290.815,
-    "change": -1.63,
-    "marketCap": "$3.0T",
+    "price": 291.13,
+    "change": -1.52,
+    "marketCap": "$4.3T",
     "pe": "29.4",
     "revenue": "$416B",
     "margin": "+46.9%",
@@ -163,6 +176,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AAPL/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/AAPL/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -194,19 +213,26 @@
       "analystSellRatings": 1,
       "annualDividend": "$1.08",
       "exDividendDate": "05/11/2026",
-      "dividendPaymentDate": "05/14/2026"
+      "dividendPaymentDate": "05/14/2026",
+      "priorFiscalRevenue": "$391B",
+      "revenueGrowthPercent": 6.4,
+      "revenueGrowth": "+6.4%",
+      "operatingIncome": "$133B",
+      "dilutedEps": 7.46,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "47,313,400"
     },
-    "refreshedAt": "2026-06-12T19:27:42.164Z",
+    "refreshedAt": "2026-06-13T17:59:35.711Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:39.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
   },
   "MSFT": {
     "ticker": "MSFT",
     "name": "Microsoft Corporation",
-    "price": 389.55,
-    "change": -0.2,
-    "marketCap": "$3.3T",
+    "price": 390.74,
+    "change": 0.1,
+    "marketCap": "$2.9T",
     "pe": "34.2",
     "revenue": "$282B",
     "margin": "+68.8%",
@@ -264,6 +290,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/MSFT/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -295,19 +327,26 @@
       "analystSellRatings": 0,
       "annualDividend": "$3.64",
       "exDividendDate": "05/21/2026",
-      "dividendPaymentDate": "06/11/2026"
+      "dividendPaymentDate": "06/11/2026",
+      "priorFiscalRevenue": "$245B",
+      "revenueGrowthPercent": 14.9,
+      "revenueGrowth": "+14.9%",
+      "operatingIncome": "$129B",
+      "dilutedEps": 13.64,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "34,711,072"
     },
-    "refreshedAt": "2026-06-12T19:27:42.599Z",
+    "refreshedAt": "2026-06-13T17:59:36.263Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:41.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
   },
   "TSLA": {
     "ticker": "TSLA",
-    "name": "Tesla, Inc.",
-    "price": 403.35,
-    "change": 1.05,
-    "marketCap": "$566B",
+    "name": "Tesla, Inc. ",
+    "price": 406.43,
+    "change": 1.82,
+    "marketCap": "$1.5T",
     "pe": "58.1",
     "revenue": "$95B",
     "margin": "+18.0%",
@@ -365,6 +404,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/TSLA/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/TSLA/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -396,19 +441,26 @@
       "analystSellRatings": 3,
       "annualDividend": "$N/A",
       "exDividendDate": "No scheduled dividend",
-      "dividendPaymentDate": "No scheduled dividend"
+      "dividendPaymentDate": "No scheduled dividend",
+      "priorFiscalRevenue": "$98B",
+      "revenueGrowthPercent": -2.9,
+      "revenueGrowth": "-2.9%",
+      "operatingIncome": "$4B",
+      "dilutedEps": 1.08,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "57,596,978"
     },
-    "refreshedAt": "2026-06-12T19:27:42.988Z",
+    "refreshedAt": "2026-06-13T17:59:37.097Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:40.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:00.000Z"
   },
   "AMZN": {
     "ticker": "AMZN",
     "name": "Amazon.com, Inc.",
-    "price": 237.81,
-    "change": -1.53,
-    "marketCap": "$1.9T",
+    "price": 238.55,
+    "change": -1.23,
+    "marketCap": "$2.6T",
     "pe": "41.5",
     "revenue": "$717B",
     "margin": "+0.8%",
@@ -466,6 +518,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AMZN/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/AMZN/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -497,22 +555,29 @@
       "analystSellRatings": 0,
       "annualDividend": "$N/A",
       "exDividendDate": "No scheduled dividend",
-      "dividendPaymentDate": "No scheduled dividend"
+      "dividendPaymentDate": "No scheduled dividend",
+      "priorFiscalRevenue": "$638B",
+      "revenueGrowthPercent": 12.4,
+      "revenueGrowth": "+12.4%",
+      "operatingIncome": "$80B",
+      "dilutedEps": 7.17,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "43,729,918"
     },
-    "refreshedAt": "2026-06-12T19:27:43.409Z",
+    "refreshedAt": "2026-06-13T17:59:37.754Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:39.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
   },
   "META": {
     "ticker": "META",
     "name": "Meta Platforms, Inc.",
-    "price": 567.425,
-    "change": -0.18,
-    "marketCap": "$1.25T",
+    "price": 566.98,
+    "change": -0.26,
+    "marketCap": "$1.4T",
     "pe": "25.8",
     "revenue": "$201B",
-    "margin": "39%",
+    "margin": "+41.4%",
     "score": 81,
     "verdict": "Efficient core business funding AI",
     "thesis": "Meta combines a highly profitable advertising engine with aggressive AI investment. The case works when AI improves ad targeting, engagement, and business messaging while management keeps spending discipline visible.",
@@ -567,6 +632,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/META/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/META/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -598,19 +669,26 @@
       "analystSellRatings": 0,
       "annualDividend": "$2.1",
       "exDividendDate": "03/16/2026",
-      "dividendPaymentDate": "03/26/2026"
+      "dividendPaymentDate": "03/26/2026",
+      "priorFiscalRevenue": "$165B",
+      "revenueGrowthPercent": 22.2,
+      "revenueGrowth": "+22.2%",
+      "operatingIncome": "$83B",
+      "dilutedEps": 23.49,
+      "exchange": "NASDAQ-GS",
+      "averageVolume": "16,488,067"
     },
-    "refreshedAt": "2026-06-12T19:27:43.786Z",
+    "refreshedAt": "2026-06-13T17:59:38.324Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:42.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
   },
   "JPM": {
     "ticker": "JPM",
-    "name": "JPMorgan Chase & Co.",
-    "price": 320.64,
-    "change": 2.28,
-    "marketCap": "$610B",
+    "name": "J P Morgan Chase & Co",
+    "price": 320.72,
+    "change": 2.31,
+    "marketCap": "$859B",
     "pe": "12.1",
     "revenue": "$182B",
     "margin": "32%",
@@ -668,6 +746,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/JPM/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/JPM/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -677,7 +761,7 @@
       "analystTargetPrice": "$336.50",
       "dividendYield": "0.00%",
       "fiftyTwoWeekHigh": "$337.25",
-      "fiftyTwoWeekLow": "$262.71",
+      "fiftyTwoWeekLow": "$266.85",
       "latestNews": [],
       "secCik": "0000019617",
       "secEntityName": "JPMORGAN CHASE & CO",
@@ -699,22 +783,29 @@
       "analystSellRatings": 0,
       "annualDividend": "$N/A",
       "exDividendDate": "No scheduled dividend",
-      "dividendPaymentDate": "No scheduled dividend"
+      "dividendPaymentDate": "No scheduled dividend",
+      "priorFiscalRevenue": "$178B",
+      "revenueGrowthPercent": 2.8,
+      "revenueGrowth": "+2.8%",
+      "operatingIncome": "$0",
+      "dilutedEps": 20.02,
+      "exchange": "NYSE",
+      "averageVolume": "19,163,627"
     },
-    "refreshedAt": "2026-06-12T19:27:44.305Z",
+    "refreshedAt": "2026-06-13T17:59:40.154Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:41.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:00:02.000Z"
   },
   "DIS": {
     "ticker": "DIS",
-    "name": "The Walt Disney Company",
-    "price": 100.118,
-    "change": -0.22,
-    "marketCap": "$184B",
+    "name": "Walt Disney Company (The)",
+    "price": 100.04,
+    "change": -0.3,
+    "marketCap": "$174B",
     "pe": "20.3",
     "revenue": "$94B",
-    "margin": "14%",
+    "margin": "+18.6%",
     "score": 63,
     "verdict": "Turnaround needs proof",
     "thesis": "Disney has valuable brands and parks economics, but streaming profitability and linear TV decline still shape the debate. The stock needs consistent execution before the multiple can fully recover.",
@@ -769,6 +860,12 @@
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/DIS/dividends?assetclass=stocks",
         "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/DIS/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
       }
     ],
     "context": {
@@ -800,11 +897,18 @@
       "analystSellRatings": 0,
       "annualDividend": "$N/A",
       "exDividendDate": "No scheduled dividend",
-      "dividendPaymentDate": "No scheduled dividend"
+      "dividendPaymentDate": "No scheduled dividend",
+      "priorFiscalRevenue": "$91B",
+      "revenueGrowthPercent": 3.4,
+      "revenueGrowth": "+3.4%",
+      "operatingIncome": "$18B",
+      "dilutedEps": 6.85,
+      "exchange": "NYSE",
+      "averageVolume": "11,425,926"
     },
-    "refreshedAt": "2026-06-12T19:27:44.625Z",
+    "refreshedAt": "2026-06-13T17:59:41.543Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T19:27:35.000Z"
+    "quoteUpdatedAt": "2026-06-12T20:02:49.000Z"
   }
 }

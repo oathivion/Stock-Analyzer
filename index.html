@@ -131,6 +131,15 @@
               <div class="score-pill" id="scorePill">82</div>
             </div>
             <p class="thesis" id="thesisText"></p>
+            <div class="purchase-fit" aria-label="Purchase fit score">
+              <div class="purchase-score" id="purchaseScore">--</div>
+              <div class="purchase-summary">
+                <span>Purchase fit score</span>
+                <strong id="purchaseLabel">Calculating fit...</strong>
+                <p id="purchaseDescription">Based on research quality, reported growth, selected risk, and holding period.</p>
+              </div>
+              <div class="purchase-components" id="purchaseComponents"></div>
+            </div>
             <div class="metric-grid" id="metricGrid"></div>
           </article>
 
@@ -166,6 +175,7 @@
             </div>
             <select id="comparisonSort" aria-label="Sort comparison">
               <option value="score">Score</option>
+              <option value="purchaseScore">Purchase fit</option>
               <option value="change">Daily move</option>
               <option value="pe">Forward P/E</option>
               <option value="price">Price</option>
@@ -182,7 +192,8 @@
                   <th>P/E</th>
                   <th>Revenue</th>
                   <th>Margin</th>
-                  <th>Score</th>
+                  <th>Research</th>
+                  <th>Purchase fit</th>
                 </tr>
               </thead>
               <tbody id="comparisonBody"></tbody>
@@ -224,6 +235,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=20260612-lookup-fix"></script>
+    <script src="app.js?v=20260613-purchase-fit-strict"></script>
   </body>
 </html>

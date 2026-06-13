@@ -423,6 +423,60 @@ function scoreFor(stock, lens, risk) {
   return Math.max(25, Math.min(95, score));
 }
 
+function clamp(value, minimum, maximum) {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+function parseMoney(value) {
+  const number = Number.parseFloat(String(value || "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(number) ? number : null;
+}
+
+function purchaseFitFor(stock, researchScore, risk, horizon) {
+  const growthPercent = Number(stock.context?.revenueGrowthPercent || 0);
+  const growthScore = clamp(50 + growthPercent * 1.25, 10, 100);
+  const price = Number(stock.price) || 0;
+  const high = parseMoney(stock.context?.fiftyTwoWeekHigh);
+  const low = parseMoney(stock.context?.fiftyTwoWeekLow);
+  const rangePercent = price > 0 && high !== null && low !== null ? ((high - low) / price) * 100 : 50;
+  let riskLevel = rangePercent <= 25 ? 1 : rangePercent <= 45 ? 2 : rangePercent <= 70 ? 3 : rangePercent <= 100 ? 4 : 5;
+  const pe = Number.parseFloat(stock.pe);
+  if (Number.isFinite(pe) && pe > 45) riskLevel = Math.min(5, riskLevel + 1);
+
+  const selectedRisk = clamp(Number(risk) || 3, 1, 5);
+  const riskFit = clamp(100 - Math.abs(selectedRisk - riskLevel) * 22, 20, 100);
+  const horizonFit = horizon === "3 months"
+    ? clamp(104 - riskLevel * 14, 30, 95)
+    : horizon === "3 years"
+      ? clamp(62 + growthScore * 0.32 - riskLevel * 2, 45, 96)
+      : clamp(82 - Math.abs(riskLevel - 3) * 7 + growthScore * 0.08, 45, 95);
+  const rawScore = (
+    clamp(Number(researchScore) || 65, 0, 100) * 0.45
+    + growthScore * 0.30
+    + riskFit * 0.15
+    + horizonFit * 0.10
+  );
+  const score = Math.round(clamp(100 - (100 - rawScore) * 1.3, 0, 100));
+  const label = score >= 80 ? "Strong fit" : score >= 65 ? "Good fit" : score >= 50 ? "Watch closely" : "Weak fit";
+
+  return {
+    score,
+    rawScore: Math.round(rawScore),
+    strictnessMultiplier: 1.3,
+    label,
+    growthPercent: Number(growthPercent.toFixed(1)),
+    estimatedRiskLevel: riskLevel,
+    selectedRisk,
+    horizon,
+    components: {
+      research: Math.round(clamp(Number(researchScore) || 65, 0, 100)),
+      growth: Math.round(growthScore),
+      riskFit: Math.round(riskFit),
+      horizonFit: Math.round(horizonFit)
+    }
+  };
+}
+
 function generatePath(stock, score) {
   const points = 42;
   const volatility = 0.045 + (100 - score) / 1800;
@@ -770,6 +824,12 @@ async function fetchSecCompanyFacts(ticker) {
     facts.Revenues,
     facts.SalesRevenueNet
   ]);
+  const revenueFacts = annualFactsAcross([
+    facts.RevenueFromContractWithCustomerExcludingAssessedTax,
+    facts.Revenues,
+    facts.SalesRevenueNet
+  ]);
+  const priorRevenueFact = revenueFacts[1] || null;
   const netIncomeFact = latestAnnualFact(facts.NetIncomeLoss);
   const grossProfitFact = latestAnnualFact(facts.GrossProfit);
   const assetsFact = latestInstantFact(facts.Assets);
@@ -780,6 +840,9 @@ async function fetchSecCompanyFacts(ticker) {
   const dilutedEpsFact = latestAnnualFactForUnit(facts.EarningsPerShareDiluted, "USD/shares");
 
   const revenue = revenueFact?.val;
+  const revenueGrowthPercent = revenue && priorRevenueFact?.val
+    ? ((revenue - priorRevenueFact.val) / priorRevenueFact.val) * 100
+    : 0;
   const grossProfit = grossProfitFact?.val;
 
   const liabilities = liabilitiesFact?.val || (assetsFact?.val && equityFact?.val ? assetsFact.val - equityFact.val : null);
@@ -795,6 +858,9 @@ async function fetchSecCompanyFacts(ticker) {
       secCik: cik,
       secEntityName: data.entityName || "Unavailable",
       fiscalRevenue: revenue ? formatLargeNumber(revenue) : "Unavailable",
+      priorFiscalRevenue: priorRevenueFact?.val ? formatLargeNumber(priorRevenueFact.val) : "Not reported",
+      revenueGrowthPercent: Number(revenueGrowthPercent.toFixed(1)),
+      revenueGrowth: `${revenueGrowthPercent >= 0 ? "+" : ""}${revenueGrowthPercent.toFixed(1)}%`,
       fiscalNetIncome: netIncomeFact?.val ? formatLargeNumber(netIncomeFact.val) : "Unavailable",
       totalAssets: assetsFact?.val ? formatLargeNumber(assetsFact.val) : "Unavailable",
       totalLiabilities: liabilities ? formatLargeNumber(liabilities) : "$0",
@@ -834,10 +900,19 @@ function latestAnnualFact(concept) {
 }
 
 function latestAnnualAcross(concepts) {
-  return concepts
-    .map(latestAnnualFact)
-    .filter(Boolean)
-    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+  return annualFactsAcross(concepts)[0] || null;
+}
+
+function annualFactsAcross(concepts) {
+  const byPeriod = new Map();
+  for (const concept of concepts) {
+    for (const fact of factCandidates(concept).filter((item) => item.fp === "FY")) {
+      const current = byPeriod.get(fact.end);
+      if (!current || String(fact.filed).localeCompare(String(current.filed)) > 0) byPeriod.set(fact.end, fact);
+    }
+  }
+  return [...byPeriod.values()]
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)));
 }
 
 function latestAnnualFactForUnit(concept, unit) {
@@ -1035,6 +1110,7 @@ function localResearch({ stock, lens, horizon, risk }) {
   return {
     ...stock,
     score,
+    purchaseFit: purchaseFitFor(stock, score, risk, horizon),
     horizon,
     lens,
     chart: generatePath(stock, score),
@@ -1118,6 +1194,7 @@ Rules:
     ...input.stock,
     ...brief,
     score: Number(brief.score),
+    purchaseFit: purchaseFitFor(input.stock, Number(brief.score), input.risk, input.horizon),
     lens: input.lens,
     horizon: input.horizon,
     chart: generatePath(input.stock, Number(brief.score)),
@@ -1252,9 +1329,12 @@ async function handleComparison(req, res) {
       .slice(0, 25);
     const lens = url.searchParams.get("lens") || "balanced";
     const risk = Number(url.searchParams.get("risk") || 3);
+    const horizon = url.searchParams.get("horizon") || "12 months";
     const cache = loadStockCache();
     const rows = requested.map((ticker) => {
       const base = cache[ticker] || fallbackStock(ticker);
+      const researchScore = scoreFor(base, lens, risk);
+      const purchaseFit = purchaseFitFor(base, researchScore, risk, horizon);
       return {
         ticker,
         name: base.name,
@@ -1266,7 +1346,9 @@ async function handleComparison(req, res) {
         pe: base.pe,
         revenue: base.revenue,
         margin: base.margin,
-        score: scoreFor(base, lens, risk),
+        score: researchScore,
+        purchaseScore: purchaseFit.score,
+        purchaseFit,
         source: base.source || "demo"
       };
     });
@@ -1275,6 +1357,7 @@ async function handleComparison(req, res) {
       updatedAt: new Date().toISOString(),
       lens,
       risk,
+      horizon,
       rows,
       warnings: []
     });
@@ -1375,6 +1458,15 @@ export const server = createServer(async (req, res) => {
   const tickerMatch = url.pathname.match(/^\/api\/quote\/([^/]+)$/);
   const lookupMatch = url.pathname.match(/^\/api\/lookup\/([^/]+)$/);
   const historyMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);
+
+  if (req.method === "GET" && url.pathname === "/health") {
+    json(res, 200, {
+      status: "ok",
+      service: "ai-stock-research-assistant",
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
 
   if (req.method === "GET" && tickerMatch) {
     await handleQuote(req, res, normalizeTicker(tickerMatch[1]));
