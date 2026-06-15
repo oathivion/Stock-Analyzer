@@ -870,7 +870,8 @@
       {
         "title": "Local trusted-source cache",
         "provider": "Stock Analyzer",
-        "detail": "Last refreshed 2026-06-13T18:04:15.033Z."
+        "detail": "Last refreshed 2026-06-13T18:04:15.033Z.",
+        "retrievedAt": "2026-06-15T02:38:20.698Z"
       }
     ],
     "context": {
@@ -883,8 +884,32 @@
       "fiftyTwoWeekLow": "Not reported",
       "latestNews": []
     },
-    "refreshedAt": "2026-06-13T18:04:15.298Z",
-    "warnings": []
+    "refreshedAt": "2026-06-15T02:38:21.072Z",
+    "warnings": [],
+    "catalysts": [
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target No consensus; range unavailable to unavailable.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Review the latest SEC filing.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "CK": {
     "ticker": "CK",
@@ -1150,6 +1175,159 @@
     "quoteSource": "Yahoo Finance",
     "quoteUpdatedAt": "2026-06-12T20:00:03.000Z",
     "refreshedAt": "2026-06-13T18:12:18.781Z",
+    "warnings": []
+  },
+  "PS": {
+    "ticker": "PS",
+    "name": "Pershing Square Inc. Common Stock",
+    "price": 33.55,
+    "change": -0.06,
+    "marketCap": "$13B",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Chart quote",
+        "provider": "Yahoo Finance",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/PS?range=1d&interval=1m",
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      },
+      {
+        "title": "SEC EDGAR Company Facts",
+        "provider": "U.S. Securities and Exchange Commission",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0002026053.json",
+        "detail": "XBRL company facts for revenue, profitability, cash flow, debt, cash, equity, and diluted share trends.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      },
+      {
+        "title": "Company Profile",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/company/PS/company-profile",
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      },
+      {
+        "title": "Analyst Price Targets",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/analyst/PS/targetprice",
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      },
+      {
+        "title": "Dividend History",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/PS/dividends?assetclass=stocks",
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      },
+      {
+        "title": "Quote Summary",
+        "provider": "Nasdaq",
+        "url": "https://api.nasdaq.com/api/quote/PS/summary?assetclass=stocks",
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T02:38:27.250Z"
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "Pershing Square Inc. is the parent company of Pershing Square Capital Management, L.P., an SEC -registered investment advisor to investment funds and other companies, based in New York City.",
+      "analystTargetPrice": "$42.38",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "$54.94",
+      "fiftyTwoWeekLow": "$22.01",
+      "latestNews": [],
+      "secCik": "0002026053",
+      "secEntityName": "Pershing Square Inc.",
+      "fiscalRevenue": "Unavailable",
+      "priorFiscalRevenue": "Not reported",
+      "revenueGrowthPercent": 0,
+      "revenueGrowth": "+0.0%",
+      "fiscalNetIncome": "Unavailable",
+      "totalAssets": "$990M",
+      "totalLiabilities": "$106M",
+      "stockholdersEquity": "Unavailable",
+      "operatingCashFlow": "Unavailable",
+      "operatingIncome": "$0",
+      "dilutedEps": null,
+      "capitalExpenditures": "Unavailable",
+      "freeCashFlow": "Unavailable",
+      "freeCashFlowMargin": "Unavailable",
+      "netMargin": "Unavailable",
+      "returnOnAssets": "0.0%",
+      "returnOnEquity": "Unavailable",
+      "totalDebt": "$35M",
+      "cashAndEquivalents": "$47M",
+      "netDebt": "-$12M",
+      "debtToEquity": "Unavailable",
+      "dilutedShares": "Unavailable",
+      "shareChangePercent": null,
+      "shareChange": "Unavailable",
+      "dilutionLabel": "Unavailable",
+      "latestFiscalPeriod": "Unavailable",
+      "latestFilingDate": "Unavailable",
+      "companyUrl": "",
+      "address": "787 ELEVENTH AVENUE,9TH FLOOR, NEW YORK, New York, 10019, United States",
+      "region": "",
+      "analystTargetLow": "$37.00",
+      "analystTargetHigh": "$50.00",
+      "analystBuyRatings": 2,
+      "analystHoldRatings": 7,
+      "analystSellRatings": 0,
+      "annualDividend": "$N/A",
+      "exDividendDate": "No scheduled dividend",
+      "dividendPaymentDate": "No scheduled dividend",
+      "exchange": "NYSE",
+      "averageVolume": "N/A"
+    },
+    "quoteSource": "Yahoo Finance",
+    "quoteUpdatedAt": "2026-06-12T20:00:14.000Z",
+    "catalysts": [
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $42.38; range $37.00 to $50.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Review the latest SEC filing.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ],
+    "refreshedAt": "2026-06-15T02:38:35.524Z",
     "warnings": []
   }
 }

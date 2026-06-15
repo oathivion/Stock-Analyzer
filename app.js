@@ -1,3 +1,5 @@
+import { calculatePurchaseFit as scorePurchaseFit } from "./scoring.js";
+
 const demoStocks = {
   NVDA: { name: "NVIDIA Corporation", price: 126.8, change: 2.4, marketCap: "$3.1T", pe: "38.7", revenue: "+78%", margin: "74%" },
   AAPL: { name: "Apple Inc.", price: 203.5, change: -0.7, marketCap: "$3.0T", pe: "29.4", revenue: "+3%", margin: "46%" },
@@ -9,11 +11,18 @@ const demoStocks = {
   DIS: { name: "The Walt Disney Company", price: 101.2, change: -0.4, marketCap: "$184B", pe: "20.3", revenue: "+5%", margin: "14%" }
 };
 
-const defaultWatchlist = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
+const coreWatchlist = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
+let displayedWatchlist = [...coreWatchlist];
+let currentUser = null;
+let authMode = "login";
+let portfolioHoldings = [];
+let alertRules = [];
 let activeTicker = "NVDA";
 let activeBrief = null;
 let currentRequest = 0;
 let historyRequest = 0;
+let catalystRequest = 0;
+let catalystEvents = [];
 
 const form = document.querySelector("#researchForm");
 const tickerInput = document.querySelector("#tickerInput");
@@ -31,6 +40,21 @@ const metricGrid = document.querySelector("#metricGrid");
 const driversList = document.querySelector("#driversList");
 const risksList = document.querySelector("#risksList");
 const checksList = document.querySelector("#checksList");
+const fundamentalsGrid = document.querySelector("#fundamentalsGrid");
+const fundamentalsStatus = document.querySelector("#fundamentalsStatus");
+const screenerForm = document.querySelector("#screenerForm");
+const screenerStatus = document.querySelector("#screenerStatus");
+const screenerBody = document.querySelector("#screenerBody");
+const screenSector = document.querySelector("#screenSector");
+const catalystStatus = document.querySelector("#catalystStatus");
+const catalystTimeline = document.querySelector("#catalystTimeline");
+const catalystFilter = document.querySelector("#catalystFilter");
+const validationStatus = document.querySelector("#validationStatus");
+const validationSummary = document.querySelector("#validationSummary");
+const validationNotice = document.querySelector("#validationNotice");
+const validationTierBody = document.querySelector("#validationTierBody");
+const validationStockBody = document.querySelector("#validationStockBody");
+const runValidationButton = document.querySelector("#runValidationButton");
 const contextList = document.querySelector("#contextList");
 const sourcesList = document.querySelector("#sourcesList");
 const chart = document.querySelector("#priceChart");
@@ -46,6 +70,34 @@ const liveStatus = document.querySelector("#liveStatus");
 const comparisonBody = document.querySelector("#comparisonBody");
 const comparisonStatus = document.querySelector("#comparisonStatus");
 const comparisonSort = document.querySelector("#comparisonSort");
+const accountButton = document.querySelector("#accountButton");
+const accountLabel = document.querySelector("#accountLabel");
+const accountEmail = document.querySelector("#accountEmail");
+const saveTickerButton = document.querySelector("#saveTickerButton");
+const authDialog = document.querySelector("#authDialog");
+const authForm = document.querySelector("#authForm");
+const authTitle = document.querySelector("#authTitle");
+const authEmail = document.querySelector("#authEmail");
+const authPassword = document.querySelector("#authPassword");
+const authStatus = document.querySelector("#authStatus");
+const authSubmitButton = document.querySelector("#authSubmitButton");
+const authModeButton = document.querySelector("#authModeButton");
+const holdingForm = document.querySelector("#holdingForm");
+const holdingTicker = document.querySelector("#holdingTicker");
+const holdingShares = document.querySelector("#holdingShares");
+const holdingCost = document.querySelector("#holdingCost");
+const portfolioStatus = document.querySelector("#portfolioStatus");
+const portfolioSummary = document.querySelector("#portfolioSummary");
+const sectorAllocation = document.querySelector("#sectorAllocation");
+const portfolioBody = document.querySelector("#portfolioBody");
+const alertForm = document.querySelector("#alertForm");
+const alertTicker = document.querySelector("#alertTicker");
+const alertMetric = document.querySelector("#alertMetric");
+const alertOperator = document.querySelector("#alertOperator");
+const alertThreshold = document.querySelector("#alertThreshold");
+const alertsStatus = document.querySelector("#alertsStatus");
+const alertsBody = document.querySelector("#alertsBody");
+const refreshAlertsButton = document.querySelector("#refreshAlertsButton");
 const liveQuotes = {};
 const liveRefreshMs = 30000;
 let liveTimer = null;
@@ -131,7 +183,7 @@ async function requestResearch() {
   setLoading(true);
 
   try {
-    if (!defaultWatchlist.includes(controls.ticker)) {
+    if (!coreWatchlist.includes(controls.ticker)) {
       const lookupResponse = await fetch(`/api/lookup/${encodeURIComponent(controls.ticker)}`);
       if (!lookupResponse.ok) throw new Error(`Ticker lookup failed with ${lookupResponse.status}.`);
       const lookupData = await lookupResponse.json();
@@ -184,7 +236,7 @@ function setLoading(isLoading) {
   form.classList.toggle("is-loading", isLoading);
   copyButton.disabled = isLoading;
   downloadButton.disabled = isLoading;
-  if (isLoading && defaultWatchlist.includes(getControls().ticker)) {
+  if (isLoading && coreWatchlist.includes(getControls().ticker)) {
     verdictTitle.textContent = "Researching...";
     thesisText.textContent = "Gathering quote data, applying your research lens, and drafting the brief.";
   }
@@ -192,8 +244,8 @@ function setLoading(isLoading) {
 
 function renderWatchlist() {
   watchlistGrid.innerHTML = "";
-  defaultWatchlist.forEach((ticker) => {
-    const stock = demoStocks[ticker];
+  displayedWatchlist.forEach((ticker) => {
+    const stock = demoStocks[ticker] || (activeBrief?.ticker === ticker ? activeBrief : { name: "Saved stock", change: 0 });
     const live = liveQuotes[ticker];
     const change = live?.change ?? stock.change;
     const button = document.createElement("button");
@@ -213,67 +265,287 @@ function renderWatchlist() {
   });
 }
 
+function renderAccount() {
+  accountLabel.textContent = currentUser ? "Personal watchlist" : "Guest watchlist";
+  accountEmail.textContent = currentUser?.email || "Not signed in";
+  accountButton.textContent = currentUser ? "Sign out" : "Sign in";
+  saveTickerButton.textContent = displayedWatchlist.includes(activeTicker) ? "Remove stock" : "Save stock";
+  saveTickerButton.disabled = !currentUser;
+  saveTickerButton.title = currentUser ? "Update saved watchlist" : "Sign in to save stocks";
+}
+
+function money(value) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Number(value) || 0);
+}
+
+function setPortfolioEnabled(enabled) {
+  [...holdingForm.elements].forEach((element) => { element.disabled = !enabled; });
+}
+
+function setAlertsEnabled(enabled) {
+  [...alertForm.elements].forEach((element) => { element.disabled = !enabled; });
+  refreshAlertsButton.disabled = !enabled;
+}
+
+function alertValue(rule) {
+  if (!Number.isFinite(rule.currentValue)) return "Unavailable";
+  return rule.metric === "price" ? money(rule.currentValue) : `${rule.currentValue} / 100`;
+}
+
+function renderAlerts(data = null) {
+  if (!currentUser) {
+    setAlertsEnabled(false);
+    alertRules = [];
+    alertsStatus.textContent = "Sign in to monitor price and Purchase Fit thresholds.";
+    alertsBody.innerHTML = '<tr><td colspan="6">Sign in to create alerts.</td></tr>';
+    return;
+  }
+
+  setAlertsEnabled(true);
+  const triggeredCount = data?.triggeredCount ?? alertRules.filter((alert) => alert.isTriggered).length;
+  alertsStatus.textContent = alertRules.length
+    ? `${alertRules.length} active rule${alertRules.length === 1 ? "" : "s"}; ${triggeredCount} currently triggered.`
+    : "Create a price or Purchase Fit rule for any researched stock.";
+  if (!alertRules.length) {
+    alertsBody.innerHTML = '<tr><td colspan="6">No alerts created yet.</td></tr>';
+    return;
+  }
+
+  alertsBody.innerHTML = alertRules.map((rule) => {
+    const settings = rule.metric === "purchaseScore" ? `${rule.lens}, risk ${rule.risk}, ${rule.horizon}` : rule.quoteSource || "Current quote";
+    return `<tr class="${rule.isTriggered ? "alert-triggered" : ""}">
+      <td class="company-cell"><strong>${escapeHtml(rule.ticker)}</strong><span>${escapeHtml(rule.quoteSource || "Market data")}</span></td>
+      <td>${escapeHtml(rule.label)}</td>
+      <td>${escapeHtml(alertValue(rule))}</td>
+      <td>${escapeHtml(settings)}</td>
+      <td><span class="alert-state ${rule.isTriggered ? "triggered" : "watching"}">${rule.isTriggered ? "Triggered" : "Watching"}</span></td>
+      <td><button class="remove-alert" type="button" data-alert-id="${escapeHtml(rule.id)}" title="Remove alert" aria-label="Remove alert">&times;</button></td>
+    </tr>`;
+  }).join("");
+}
+
+async function loadAlerts(silent = false) {
+  if (!currentUser) {
+    renderAlerts();
+    return;
+  }
+  try {
+    if (!silent) alertsStatus.textContent = "Evaluating alerts with current market data...";
+    const data = await apiRequest("/api/alerts");
+    alertRules = data.alerts || [];
+    currentUser.alertCount = alertRules.length;
+    renderAlerts(data);
+  } catch (error) {
+    if (!silent) alertsStatus.textContent = `Alerts unavailable: ${error.message}`;
+  }
+}
+
+function renderPortfolio(data = null) {
+  const analysis = data?.analysis;
+  if (!currentUser) {
+    setPortfolioEnabled(false);
+    portfolioStatus.textContent = "Sign in to save holdings and analyze allocation.";
+    portfolioSummary.innerHTML = "";
+    sectorAllocation.innerHTML = "";
+    portfolioBody.innerHTML = '<tr><td colspan="8">Your saved portfolio will appear here.</td></tr>';
+    return;
+  }
+
+  setPortfolioEnabled(true);
+  if (!analysis?.rows?.length) {
+    portfolioStatus.textContent = "Add your first holding to begin portfolio analysis.";
+    portfolioSummary.innerHTML = "";
+    sectorAllocation.innerHTML = "";
+    portfolioBody.innerHTML = '<tr><td colspan="8">No holdings saved yet.</td></tr>';
+    return;
+  }
+
+  const summary = analysis.summary;
+  const gainClass = summary.gainLoss >= 0 ? "gain" : "loss";
+  portfolioStatus.textContent = `${analysis.rows.length} holding${analysis.rows.length === 1 ? "" : "s"} analyzed using current available quotes.`;
+  portfolioSummary.innerHTML = [
+    ["Portfolio value", money(summary.totalValue), ""],
+    ["Cost basis", money(summary.totalCost), ""],
+    ["Unrealized gain/loss", `${money(summary.gainLoss)} (${summary.gainLossPercent >= 0 ? "+" : ""}${summary.gainLossPercent.toFixed(2)}%)`, gainClass],
+    ["Weighted risk", `${summary.weightedRisk.toFixed(1)} / 5`, ""],
+    ["Concentration", `${summary.concentrationLabel}${summary.largestPosition ? ` (${summary.largestPosition.ticker} ${summary.largestPosition.allocation}%)` : ""}`, ""]
+  ].map(([label, value, className]) => `<div class="portfolio-stat"><span>${label}</span><strong class="${className}">${escapeHtml(value)}</strong></div>`).join("");
+  sectorAllocation.innerHTML = analysis.sectors
+    .map((sector) => `<div class="allocation-item"><strong>${escapeHtml(sector.sector)}</strong> ${sector.allocation}%</div>`)
+    .join("");
+  portfolioBody.innerHTML = analysis.rows.map((row) => `
+    <tr>
+      <td class="company-cell"><strong>${escapeHtml(row.ticker)}</strong><span>${escapeHtml(row.name)}</span></td>
+      <td>${row.shares}</td>
+      <td>${money(row.price)}</td>
+      <td>${money(row.marketValue)}</td>
+      <td>${row.allocation}%</td>
+      <td class="${row.gainLoss >= 0 ? "gain" : "loss"}">${money(row.gainLoss)} (${row.gainLossPercent >= 0 ? "+" : ""}${row.gainLossPercent.toFixed(2)}%)</td>
+      <td>${row.riskLevel}/5</td>
+      <td><button class="remove-holding" type="button" data-ticker="${escapeHtml(row.ticker)}" title="Remove ${escapeHtml(row.ticker)}" aria-label="Remove ${escapeHtml(row.ticker)}">&times;</button></td>
+    </tr>
+  `).join("");
+}
+
+async function loadPortfolio() {
+  if (!currentUser) {
+    portfolioHoldings = [];
+    renderPortfolio();
+    return;
+  }
+  try {
+    portfolioStatus.textContent = "Updating portfolio quotes...";
+    const data = await apiRequest("/api/portfolio");
+    portfolioHoldings = data.holdings || [];
+    currentUser.portfolio = portfolioHoldings;
+    renderPortfolio(data);
+  } catch (error) {
+    portfolioStatus.textContent = `Portfolio unavailable: ${error.message}`;
+  }
+}
+
+async function savePortfolio(holdings) {
+  const data = await apiRequest("/api/portfolio", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ holdings })
+  });
+  portfolioHoldings = data.holdings;
+  currentUser.portfolio = data.holdings;
+  renderPortfolio(data);
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const signup = mode === "signup";
+  authTitle.textContent = signup ? "Create account" : "Sign in";
+  authSubmitButton.textContent = signup ? "Create account" : "Sign in";
+  authModeButton.textContent = signup ? "Use an existing account" : "Create an account";
+  authPassword.autocomplete = signup ? "new-password" : "current-password";
+  authStatus.textContent = "";
+}
+
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Request failed with ${response.status}.`);
+  return data;
+}
+
+async function loadAccount() {
+  try {
+    const data = await apiRequest("/api/auth/me");
+    currentUser = data.user;
+    displayedWatchlist = currentUser?.watchlist?.length ? [...currentUser.watchlist] : [...coreWatchlist];
+  } catch {
+    currentUser = null;
+    displayedWatchlist = [...coreWatchlist];
+  }
+  renderAccount();
+  renderWatchlist();
+  await loadPortfolio();
+  await loadAlerts();
+}
+
+async function submitAuth() {
+  authStatus.textContent = "";
+  authSubmitButton.disabled = true;
+  try {
+    const data = await apiRequest(`/api/auth/${authMode}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: authEmail.value, password: authPassword.value })
+    });
+    currentUser = data.user;
+    displayedWatchlist = currentUser.watchlist?.length ? [...currentUser.watchlist] : [...coreWatchlist];
+    authDialog.close();
+    authForm.reset();
+    renderAccount();
+    renderWatchlist();
+    await loadPortfolio();
+    await loadAlerts();
+    requestComparison();
+    refreshLivePrices();
+  } catch (error) {
+    authStatus.textContent = error.message;
+  } finally {
+    authSubmitButton.disabled = false;
+  }
+}
+
+async function signOut() {
+  await apiRequest("/api/auth/logout", { method: "POST" });
+  currentUser = null;
+  displayedWatchlist = [...coreWatchlist];
+  portfolioHoldings = [];
+  alertRules = [];
+  renderAccount();
+  renderWatchlist();
+  renderPortfolio();
+  renderAlerts();
+  requestComparison();
+  refreshLivePrices();
+}
+
+async function toggleSavedTicker() {
+  if (!currentUser) return;
+  const exists = displayedWatchlist.includes(activeTicker);
+  if (exists && displayedWatchlist.length === 1) {
+    refreshStatus.textContent = "Keep at least one stock in your saved watchlist.";
+    return;
+  }
+  const next = exists
+    ? displayedWatchlist.filter((ticker) => ticker !== activeTicker)
+    : [...displayedWatchlist, activeTicker].slice(0, 30);
+
+  saveTickerButton.disabled = true;
+  try {
+    const data = await apiRequest("/api/watchlist", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ tickers: next })
+    });
+    displayedWatchlist = data.tickers;
+    currentUser.watchlist = data.tickers;
+    refreshStatus.textContent = exists ? `${activeTicker} removed from your watchlist.` : `${activeTicker} saved to your watchlist.`;
+    renderAccount();
+    renderWatchlist();
+    requestComparison();
+    refreshLivePrices();
+  } catch (error) {
+    refreshStatus.textContent = `Watchlist update failed: ${error.message}`;
+  } finally {
+    saveTickerButton.disabled = false;
+  }
+}
+
 function numericValue(value) {
   const parsed = Number.parseFloat(String(value ?? "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
-
 function calculatePurchaseFit(brief) {
   const controls = getControls();
-  const researchScore = Number(brief.score) || 65;
-  const growthPercent = Number(brief.context?.revenueGrowthPercent || 0);
-  const growthScore = clamp(50 + growthPercent * 1.25, 10, 100);
-  const price = Number(brief.price) || 0;
-  const high = numericValue(brief.context?.fiftyTwoWeekHigh);
-  const low = numericValue(brief.context?.fiftyTwoWeekLow);
-  const rangePercent = price > 0 && Number.isFinite(high) && Number.isFinite(low) ? ((high - low) / price) * 100 : 50;
-  let riskLevel = rangePercent <= 25 ? 1 : rangePercent <= 45 ? 2 : rangePercent <= 70 ? 3 : rangePercent <= 100 ? 4 : 5;
-  const pe = Number.parseFloat(brief.pe);
-  if (Number.isFinite(pe) && pe > 45) riskLevel = Math.min(5, riskLevel + 1);
-  const riskFit = clamp(100 - Math.abs(controls.risk - riskLevel) * 22, 20, 100);
-  const horizonFit = controls.horizon === "3 months"
-    ? clamp(104 - riskLevel * 14, 30, 95)
-    : controls.horizon === "3 years"
-      ? clamp(62 + growthScore * 0.32 - riskLevel * 2, 45, 96)
-      : clamp(82 - Math.abs(riskLevel - 3) * 7 + growthScore * 0.08, 45, 95);
-  const rawScore = researchScore * 0.45 + growthScore * 0.30 + riskFit * 0.15 + horizonFit * 0.10;
-  const score = Math.round(clamp(100 - (100 - rawScore) * 1.3, 0, 100));
-
-  return {
-    score,
-    rawScore: Math.round(rawScore),
-    strictnessMultiplier: 1.3,
-    label: score >= 80 ? "Strong fit" : score >= 65 ? "Good fit" : score >= 50 ? "Watch closely" : "Weak fit",
-    growthPercent,
-    estimatedRiskLevel: riskLevel,
+  return scorePurchaseFit({
+    researchScore: brief.score,
+    growthPercent: brief.context?.revenueGrowthPercent,
+    price: brief.price,
+    fiftyTwoWeekHigh: brief.context?.fiftyTwoWeekHigh,
+    fiftyTwoWeekLow: brief.context?.fiftyTwoWeekLow,
+    pe: brief.pe,
     selectedRisk: controls.risk,
-    horizon: controls.horizon,
-    components: {
-      research: Math.round(researchScore),
-      growth: Math.round(growthScore),
-      riskFit: Math.round(riskFit),
-      horizonFit: Math.round(horizonFit)
-    }
-  };
+    horizon: controls.horizon
+  });
 }
 
 function renderPurchaseFit(brief) {
-  const fit = brief.purchaseFit || calculatePurchaseFit(brief);
+  const suppliedFit = brief.purchaseFit;
+  const fit = suppliedFit?.componentDetails ? suppliedFit : calculatePurchaseFit(brief);
   purchaseScore.textContent = fit.score;
   purchaseLabel.textContent = fit.label;
-  purchaseDescription.textContent = `${fit.growthPercent >= 0 ? "+" : ""}${Number(fit.growthPercent).toFixed(1)}% reported revenue growth, risk level ${fit.estimatedRiskLevel}/5, ${fit.horizon} horizon. Uses a 1.3x downside penalty. Research fit only, not a recommendation.`;
-  const components = [
-    ["Research 45%", fit.components.research],
-    ["Growth 30%", fit.components.growth],
-    ["Risk match 15%", fit.components.riskFit],
-    ["Time fit 10%", fit.components.horizonFit]
-  ];
-  purchaseComponents.innerHTML = components
-    .map(([label, value]) => `<div class="purchase-component"><span>${label}</span><strong>${value}</strong></div>`)
+  purchaseDescription.textContent = `${fit.explanation} Estimated risk ${fit.estimatedRiskLevel}/5 versus selected ${fit.selectedRisk}/5. Research fit only, not a recommendation.`;
+  purchaseComponents.innerHTML = (fit.componentDetails || [])
+    .map((component) => `<div class="purchase-component"><span>${escapeHtml(component.label)} ${Math.round(component.weight * 100)}%</span><strong>${component.score} <small>+${component.contribution.toFixed(1)}</small></strong></div>`)
     .join("");
 }
 
@@ -319,7 +591,7 @@ async function requestComparison() {
 
   try {
     const params = new URLSearchParams({
-      tickers: defaultWatchlist.join(","),
+      tickers: displayedWatchlist.join(","),
       lens: controls.lens,
       risk: String(controls.risk),
       horizon: controls.horizon
@@ -333,6 +605,123 @@ async function requestComparison() {
   } catch (error) {
     comparisonStatus.textContent = `Comparison unavailable: ${error.message}`;
   }
+}
+
+function screenerParams() {
+  const controls = getControls();
+  return new URLSearchParams({
+    query: document.querySelector("#screenQuery").value.trim(),
+    sector: screenSector.value,
+    minGrowth: document.querySelector("#screenGrowth").value,
+    maxPe: document.querySelector("#screenPe").value,
+    minMarketCap: document.querySelector("#screenMarketCap").value,
+    maxRisk: document.querySelector("#screenRisk").value,
+    minScore: document.querySelector("#screenScore").value,
+    minPurchaseScore: document.querySelector("#screenPurchase").value,
+    sort: document.querySelector("#screenSort").value,
+    lens: controls.lens,
+    risk: String(controls.risk),
+    horizon: controls.horizon
+  });
+}
+
+function renderScreener(rows) {
+  if (!rows.length) {
+    screenerBody.innerHTML = '<tr><td colspan="10">No cached stocks match these filters.</td></tr>';
+    return;
+  }
+  screenerBody.innerHTML = rows.map((row) => `
+    <tr class="screener-row" tabindex="0" data-ticker="${escapeHtml(row.ticker)}">
+      <td class="company-cell"><strong>${escapeHtml(row.ticker)}</strong><span>${escapeHtml(row.name)}</span></td>
+      <td>${escapeHtml(row.sector)}</td>
+      <td>$${Number(row.price).toFixed(2)}</td>
+      <td>${escapeHtml(row.marketCap)}</td>
+      <td class="${row.growthPercent >= 0 ? "gain" : "loss"}">${row.growthPercent >= 0 ? "+" : ""}${Number(row.growthPercent).toFixed(1)}%</td>
+      <td>${Number.isFinite(Number(row.pe)) ? Number(row.pe).toFixed(1) : "--"}</td>
+      <td>${escapeHtml(row.margin)}</td>
+      <td>${row.riskLevel}/5</td>
+      <td class="table-score">${row.score}</td>
+      <td class="table-score">${row.purchaseScore}</td>
+    </tr>
+  `).join("");
+}
+
+async function requestScreener() {
+  screenerStatus.textContent = "Applying discovery filters...";
+  try {
+    const data = await apiRequest(`/api/screener?${screenerParams()}`);
+    const currentSector = screenSector.value;
+    screenSector.innerHTML = '<option value="all">All sectors</option>'
+      + data.sectors.map((sector) => `<option value="${escapeHtml(sector)}">${escapeHtml(sector)}</option>`).join("");
+    screenSector.value = data.sectors.includes(currentSector) ? currentSector : "all";
+    renderScreener(data.rows || []);
+    screenerStatus.textContent = `${data.resultCount} of ${data.universeSize} trusted stocks match. Updated ${formatClock(data.updatedAt)}.`;
+  } catch (error) {
+    screenerStatus.textContent = `Screener unavailable: ${error.message}`;
+  }
+}
+
+function percentValue(value) {
+  if (!Number.isFinite(Number(value))) return "--";
+  const number = Number(value);
+  return `${number >= 0 ? "+" : ""}${number.toFixed(1)}%`;
+}
+
+function correlationLabel(value) {
+  if (!Number.isFinite(Number(value))) return "Pending";
+  const absolute = Math.abs(Number(value));
+  return absolute >= 0.6 ? "Strong" : absolute >= 0.3 ? "Moderate" : "Weak";
+}
+
+function renderValidation(data) {
+  const retrospective = data.retrospective;
+  const forward = data.forward;
+  const correlations = retrospective.summary.correlations;
+  const matured = Object.values(forward.summary).reduce((sum, item) => sum + item.observations, 0);
+  validationSummary.innerHTML = [
+    ["Historical sample", retrospective.summary.sampleSize, "stocks"],
+    ["3M correlation", correlations.threeMonth ?? "--", correlationLabel(correlations.threeMonth)],
+    ["12M correlation", correlations.twelveMonth ?? "--", correlationLabel(correlations.twelveMonth)],
+    ["Forward snapshots", forward.snapshotCount, "captured observations"],
+    ["Matured outcomes", matured, "across 3M, 6M, and 12M"]
+  ].map(([label, value, detail]) => `<div class="validation-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join("");
+  validationNotice.textContent = `${retrospective.limitation} ${forward.limitation}`;
+  validationTierBody.innerHTML = retrospective.summary.tiers.map((tier) => `
+    <tr><td>${escapeHtml(tier.label)}</td><td>${tier.count}</td><td>${percentValue(tier.threeMonth)}</td><td>${percentValue(tier.twelveMonth)}</td><td>${percentValue(tier.threeYear)}</td></tr>
+  `).join("");
+  validationStockBody.innerHTML = retrospective.rows.length ? retrospective.rows.map((row) => `
+    <tr><td class="company-cell"><strong>${escapeHtml(row.ticker)}</strong><span>${escapeHtml(row.name)}</span></td><td class="table-score">${row.purchaseScore}</td><td>${percentValue(row.returns.threeMonth)}</td><td>${percentValue(row.returns.twelveMonth)}</td><td>${percentValue(row.returns.threeYear)}</td></tr>
+  `).join("") : '<tr><td colspan="5">Historical prices are currently unavailable.</td></tr>';
+}
+
+async function requestValidation() {
+  const controls = getControls();
+  runValidationButton.disabled = true;
+  validationStatus.textContent = "Fetching historical prices and evaluating score snapshots...";
+  try {
+    const params = new URLSearchParams({
+      tickers: displayedWatchlist.slice(0, 12).join(","),
+      lens: controls.lens,
+      risk: String(controls.risk),
+      horizon: controls.horizon
+    });
+    const data = await apiRequest(`/api/validation?${params}`);
+    renderValidation(data);
+    validationStatus.textContent = `Validation generated ${formatClock(data.generatedAt)}${data.warnings.length ? ` with ${data.warnings.length} history warning${data.warnings.length === 1 ? "" : "s"}` : ""}.`;
+  } catch (error) {
+    validationStatus.textContent = `Validation unavailable: ${error.message}`;
+  } finally {
+    runValidationButton.disabled = false;
+  }
+}
+
+function selectScreenerRow(row) {
+  const ticker = row?.dataset?.ticker;
+  if (!ticker) return;
+  activeTicker = ticker;
+  tickerInput.value = ticker;
+  requestResearch();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function renderList(target, items) {
@@ -371,6 +760,100 @@ function renderMetrics(brief) {
   metricGrid.innerHTML = values
     .map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`)
     .join("");
+}
+
+function renderFundamentals(brief) {
+  const context = brief.context || {};
+  const surprise = context.earningsSurprisePercent;
+  const shareChange = context.shareChangePercent;
+  const values = [
+    ["Free cash flow", context.freeCashFlow || "Unavailable", "Operating cash flow less capital expenditures"],
+    ["FCF margin", context.freeCashFlowMargin || "Unavailable", "Free cash flow as a share of revenue"],
+    ["Net margin", context.netMargin || context.providerProfitMargin || "Unavailable", "Net income as a share of revenue"],
+    ["Return on equity", context.returnOnEquity || context.providerReturnOnEquity || "Unavailable", "Net income relative to shareholder equity"],
+    ["Return on assets", context.returnOnAssets || "Unavailable", "Net income relative to total assets"],
+    ["Total debt", context.totalDebt || "Unavailable", "Latest reported interest-bearing debt"],
+    ["Net debt", context.netDebt || "Unavailable", "Debt less cash and equivalents"],
+    ["Debt / equity", context.debtToEquity || "Unavailable", "Debt divided by shareholder equity"],
+    ["P/E", brief.pe || "Unavailable", context.peMethod || "Provider valuation multiple"],
+    ["Price / sales", context.priceToSales || "Unavailable", "Trailing market value relative to revenue"],
+    ["EV / EBITDA", context.evToEbitda || "Unavailable", "Enterprise value relative to EBITDA"],
+    ["Share change", context.shareChange || "Unavailable", `${context.dilutionLabel || "Unavailable"} versus prior fiscal year`],
+    ["Diluted shares", context.dilutedShares || "Unavailable", "Latest annual diluted weighted-average shares"],
+    ["EPS surprise", Number.isFinite(Number(surprise)) ? `${Number(surprise) >= 0 ? "+" : ""}${Number(surprise).toFixed(1)}%` : "Unavailable", context.earningsSurpriseLabel || "Requires configured earnings provider"],
+    ["Reported EPS", Number.isFinite(Number(context.reportedEps)) ? Number(context.reportedEps).toFixed(2) : "Unavailable", context.latestEarningsDate || "Latest quarter"],
+    ["Capital spending", context.capitalExpenditures || "Unavailable", "Property, plant, and equipment investment"]
+  ];
+
+  fundamentalsStatus.textContent = `Fiscal period ${context.latestFiscalPeriod || "unavailable"}; latest filing ${context.latestFilingDate || "unavailable"}.`;
+  fundamentalsGrid.innerHTML = values.map(([label, value, detail]) => {
+    const numericSignal = label === "EPS surprise" ? Number(surprise) : label === "Share change" ? Number(shareChange) : null;
+    const className = Number.isFinite(numericSignal) ? (label === "Share change" ? (numericSignal <= 0 ? "gain" : "loss") : (numericSignal >= 0 ? "gain" : "loss")) : "";
+    return `<div class="fundamental-item"><span>${escapeHtml(label)}</span><strong class="${className}">${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`;
+  }).join("");
+}
+
+function formatEventDate(event) {
+  if (!event.date) return "Ongoing";
+  const date = new Date(`${event.date}T12:00:00`);
+  return date.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
+
+function timingLabel(event) {
+  if (event.daysAway === null) return "Monitor";
+  if (event.daysAway === 0) return "Today";
+  if (event.daysAway === 1) return "Tomorrow";
+  if (event.daysAway > 1) return `In ${event.daysAway} days`;
+  if (event.daysAway === -1) return "Yesterday";
+  return `${Math.abs(event.daysAway)} days ago`;
+}
+
+function renderCatalysts() {
+  const filter = catalystFilter.value;
+  const events = filter === "all" ? catalystEvents : catalystEvents.filter((event) => event.timing === filter);
+  if (!events.length) {
+    catalystTimeline.innerHTML = '<p class="empty-state">No events match this view. Refresh trusted data to check for updated schedules.</p>';
+    return;
+  }
+  catalystTimeline.innerHTML = events.map((event) => {
+    const title = event.url
+      ? `<a href="${encodeURI(event.url)}" target="_blank" rel="noreferrer">${escapeHtml(event.title)}</a>`
+      : `<strong>${escapeHtml(event.title)}</strong>`;
+    return `<div class="catalyst-event ${escapeHtml(event.timing)}">
+      <div class="catalyst-date">${escapeHtml(formatEventDate(event))}<small>${escapeHtml(timingLabel(event))}</small></div>
+      <div class="catalyst-dot" aria-hidden="true"></div>
+      <div class="catalyst-copy">${title}<span>${escapeHtml(event.detail || "")}</span><small>${escapeHtml(event.source || "Unknown source")} | ${escapeHtml(event.confidence || "monitor")}</small></div>
+      <span class="event-badge">${escapeHtml(event.type)}</span>
+    </div>`;
+  }).join("");
+}
+
+async function requestCatalysts(ticker) {
+  const requestId = ++catalystRequest;
+  catalystStatus.textContent = `Loading ${ticker} events...`;
+  try {
+    const data = await apiRequest(`/api/catalysts/${encodeURIComponent(ticker)}`);
+    if (requestId !== catalystRequest) return;
+    const merged = new Map();
+    for (const event of [...catalystEvents, ...(data.events || [])]) {
+      merged.set([event.type, event.title, event.date || "monitor"].join("|"), event);
+    }
+    catalystEvents = [...merged.values()].sort((a, b) => {
+      const order = { upcoming: 0, recent: 1, monitor: 2 };
+      if (order[a.timing] !== order[b.timing]) return order[a.timing] - order[b.timing];
+      if (a.timing === "upcoming") return a.daysAway - b.daysAway;
+      if (a.timing === "recent") return b.daysAway - a.daysAway;
+      return a.title.localeCompare(b.title);
+    });
+    renderCatalysts();
+    const upcoming = catalystEvents.filter((event) => event.timing === "upcoming").length;
+    catalystStatus.textContent = `${upcoming} upcoming and ${catalystEvents.length - upcoming} recent or monitoring events. Updated ${formatClock(data.updatedAt)}.`;
+  } catch (error) {
+    if (requestId !== catalystRequest) return;
+    catalystEvents = [];
+    renderCatalysts();
+    catalystStatus.textContent = `Catalysts unavailable: ${error.message}`;
+  }
 }
 
 function escapeHtml(value) {
@@ -420,10 +903,19 @@ function renderSources(brief) {
       const title = source.url
         ? `<a href="${safeUrl}" target="_blank" rel="noreferrer">${safeTitle}</a>`
         : `<strong>${safeTitle}</strong>`;
-      return `<div class="source-item">${title}<span>${escapeHtml(source.provider || "Unknown source")}</span><p>${escapeHtml(source.detail || "")}</p></div>`;
+      const sourceDate = source.publishedAt || source.filedAt || source.asOf || source.updatedAt || source.retrievedAt || brief.refreshedAt || brief.quoteUpdatedAt;
+      const dateLabel = source.publishedAt ? "Published" : source.filedAt ? "Filed" : "Retrieved";
+      const freshness = sourceDate && sourceDate !== "Unavailable" ? ` | ${dateLabel} ${escapeHtml(formatDateTime(sourceDate))}` : "";
+      return `<div class="source-item">${title}<span>${escapeHtml(source.provider || "Unknown source")}${freshness}</span><p>${escapeHtml(source.detail || "")}</p></div>`;
     }),
     ...warnings.map((warning) => `<div class="source-item warning"><strong>Provider warning</strong><span>Runtime</span><p>${escapeHtml(warning)}</p></div>`)
   ].join("");
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "Unavailable");
+  return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 function drawChart(brief) {
@@ -546,6 +1038,64 @@ function addMessage(role, text) {
   return message;
 }
 
+function renderCitedAnswer(message, data) {
+  message.textContent = "";
+  message.classList.add("cited-message");
+  const citations = new Map((data.citations || []).map((source) => [source.id, source]));
+  for (const claim of data.claims || []) {
+    const paragraph = document.createElement("p");
+    paragraph.append(document.createTextNode(claim.text));
+    const markers = document.createElement("span");
+    markers.className = "citation-markers";
+    for (const sourceId of claim.sourceIds || []) {
+      const source = citations.get(sourceId);
+      if (!source) continue;
+      const marker = source.url ? document.createElement("a") : document.createElement("span");
+      marker.className = "citation-marker";
+      marker.textContent = `[${sourceId}]`;
+      marker.title = `${source.provider}: ${source.title}`;
+      if (source.url) {
+        marker.href = source.url;
+        marker.target = "_blank";
+        marker.rel = "noreferrer";
+      }
+      markers.appendChild(marker);
+    }
+    paragraph.appendChild(markers);
+    message.appendChild(paragraph);
+  }
+
+  if (data.citations?.length) {
+    const evidence = document.createElement("details");
+    evidence.className = "chat-evidence";
+    const summary = document.createElement("summary");
+    summary.textContent = `${data.citations.length} source${data.citations.length === 1 ? "" : "s"}`;
+    evidence.appendChild(summary);
+    for (const source of data.citations) {
+      const item = document.createElement("div");
+      const title = source.url ? document.createElement("a") : document.createElement("strong");
+      title.textContent = `${source.id} ${source.title}`;
+      if (source.url) {
+        title.href = source.url;
+        title.target = "_blank";
+        title.rel = "noreferrer";
+      }
+      const provider = document.createElement("span");
+      provider.textContent = source.provider;
+      item.append(title, provider);
+      evidence.appendChild(item);
+    }
+    message.appendChild(evidence);
+  }
+
+  if (data.caveat) {
+    const caveat = document.createElement("small");
+    caveat.className = "chat-caveat";
+    caveat.textContent = data.caveat;
+    message.appendChild(caveat);
+  }
+}
+
 async function askAssistant(question) {
   const pending = addMessage("ai", "Thinking...");
   questionInput.disabled = true;
@@ -563,7 +1113,8 @@ async function askAssistant(question) {
 
     if (!response.ok) throw new Error(`Chat request failed with ${response.status}.`);
     const data = await response.json();
-    pending.textContent = data.answer || "I could not generate a response for that question.";
+    if (data.grounded && data.claims?.length) renderCitedAnswer(pending, data);
+    else pending.textContent = "The available evidence was not sufficient to support a grounded answer.";
   } catch (error) {
     pending.textContent = `I could not reach the chat endpoint, so here is the practical fallback: ${activeBrief.thesis}`;
   } finally {
@@ -581,7 +1132,7 @@ async function refreshTrustedData() {
     const response = await fetch("/api/refresh", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ tickers: defaultWatchlist })
+      body: JSON.stringify({ tickers: displayedWatchlist })
     });
 
     if (!response.ok) throw new Error(`Refresh failed with ${response.status}.`);
@@ -624,7 +1175,7 @@ function applyLiveQuote(quote) {
 
 async function refreshLivePrices() {
   try {
-    const requestedTickers = [...new Set([...defaultWatchlist, activeTicker])];
+    const requestedTickers = [...new Set([...displayedWatchlist, activeTicker])];
     const response = await fetch(`/api/live-prices?tickers=${requestedTickers.join(",")}`);
     if (!response.ok) throw new Error(`Live price request failed with ${response.status}.`);
     const data = await response.json();
@@ -636,6 +1187,7 @@ async function refreshLivePrices() {
     }
     const warningCount = data.warnings?.length || 0;
     liveStatus.textContent = `Live prices updated ${formatClock(data.updatedAt)}${warningCount ? ` with ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`;
+    if (currentUser && alertRules.length) loadAlerts(true);
   } catch (error) {
     liveStatus.textContent = `Live price update failed: ${error.message}`;
   }
@@ -683,6 +1235,10 @@ function render(brief) {
   thesisText.textContent = brief.thesis;
   renderMarketStrip(brief);
   renderMetrics(brief);
+  renderFundamentals(brief);
+  catalystEvents = brief.catalysts || [];
+  renderCatalysts();
+  requestCatalysts(brief.ticker);
   renderList(driversList, brief.drivers);
   renderList(risksList, brief.risks);
   renderList(checksList, brief.checks);
@@ -690,6 +1246,7 @@ function render(brief) {
   renderSources(brief);
   drawChart(brief);
   renderWatchlist();
+  renderAccount();
   renderComparison();
   resetChat(brief);
 }
@@ -702,6 +1259,7 @@ form.addEventListener("submit", (event) => {
 form.addEventListener("change", () => {
   requestResearch();
   requestComparison();
+  requestScreener();
 });
 
 chatForm.addEventListener("submit", (event) => {
@@ -738,8 +1296,119 @@ document.querySelector("#resetButton").addEventListener("click", () => {
 
 refreshButton.addEventListener("click", refreshTrustedData);
 comparisonSort.addEventListener("change", renderComparison);
+saveTickerButton.addEventListener("click", toggleSavedTicker);
+accountButton.addEventListener("click", () => {
+  if (currentUser) {
+    signOut().catch((error) => { refreshStatus.textContent = `Sign out failed: ${error.message}`; });
+    return;
+  }
+  setAuthMode("login");
+  authDialog.showModal();
+});
+document.querySelector("#closeAuthButton").addEventListener("click", () => authDialog.close());
+authModeButton.addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
+authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitAuth();
+});
+holdingForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentUser) return;
+  const ticker = holdingTicker.value.trim().toUpperCase();
+  const holding = { ticker, shares: Number(holdingShares.value), averageCost: Number(holdingCost.value) };
+  const next = [...portfolioHoldings.filter((item) => item.ticker !== ticker), holding];
+  try {
+    portfolioStatus.textContent = `Updating ${ticker}...`;
+    await savePortfolio(next);
+    holdingForm.reset();
+  } catch (error) {
+    portfolioStatus.textContent = `Portfolio update failed: ${error.message}`;
+  }
+});
+portfolioBody.addEventListener("click", async (event) => {
+  const button = event.target.closest(".remove-holding");
+  if (!button || !currentUser) return;
+  try {
+    portfolioStatus.textContent = `Removing ${button.dataset.ticker}...`;
+    await savePortfolio(portfolioHoldings.filter((holding) => holding.ticker !== button.dataset.ticker));
+  } catch (error) {
+    portfolioStatus.textContent = `Portfolio update failed: ${error.message}`;
+  }
+});
+alertForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentUser) return;
+  const controls = getControls();
+  try {
+    alertsStatus.textContent = "Creating alert...";
+    const data = await apiRequest("/api/alerts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ticker: alertTicker.value.trim().toUpperCase(),
+        metric: alertMetric.value,
+        operator: alertOperator.value,
+        threshold: Number(alertThreshold.value),
+        lens: controls.lens,
+        risk: controls.risk,
+        horizon: controls.horizon
+      })
+    });
+    alertRules = data.alerts || [];
+    alertForm.reset();
+    alertTicker.value = activeTicker;
+    renderAlerts(data);
+  } catch (error) {
+    alertsStatus.textContent = `Alert creation failed: ${error.message}`;
+  }
+});
+alertsBody.addEventListener("click", async (event) => {
+  const button = event.target.closest(".remove-alert");
+  if (!button || !currentUser) return;
+  try {
+    alertsStatus.textContent = "Removing alert...";
+    const data = await apiRequest(`/api/alerts/${encodeURIComponent(button.dataset.alertId)}`, { method: "DELETE" });
+    alertRules = data.alerts || [];
+    renderAlerts(data);
+  } catch (error) {
+    alertsStatus.textContent = `Alert removal failed: ${error.message}`;
+  }
+});
+refreshAlertsButton.addEventListener("click", () => loadAlerts());
+alertMetric.addEventListener("change", () => {
+  const purchaseFit = alertMetric.value === "purchaseScore";
+  alertThreshold.max = purchaseFit ? "100" : "";
+  alertThreshold.step = purchaseFit ? "1" : "0.01";
+  alertThreshold.placeholder = purchaseFit ? "75" : "150.00";
+});
+screenerForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  requestScreener();
+});
+document.querySelector("#resetScreenerButton").addEventListener("click", () => {
+  screenerForm.reset();
+  screenSector.value = "all";
+  requestScreener();
+});
+screenerBody.addEventListener("click", (event) => selectScreenerRow(event.target.closest(".screener-row")));
+screenerBody.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    selectScreenerRow(event.target.closest(".screener-row"));
+  }
+});
+catalystFilter.addEventListener("change", renderCatalysts);
+runValidationButton.addEventListener("click", requestValidation);
 
-render(fallbackBrief(activeTicker));
-requestResearch();
-requestComparison();
-startLivePrices();
+async function initializeApp() {
+  render(fallbackBrief(activeTicker));
+  alertTicker.value = activeTicker;
+  await loadAccount();
+  requestResearch();
+  requestComparison();
+  requestScreener();
+  requestValidation();
+  startLivePrices();
+}
+
+initializeApp();

@@ -18,3 +18,13 @@ services:
         sync: false
       - key: ALPHA_VANTAGE_API_KEY
         sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-stock-research-db
+          property: connectionString
+
+databases:
+  - name: ai-stock-research-db
+    plan: free
+    databaseName: stock_research
+    user: stock_research

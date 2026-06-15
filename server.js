@@ -1,14 +1,34 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
+import { calculatePurchaseFit } from "./scoring.js";
+import { createCacheStorage } from "./storage.js";
+import { clearSessionCookie, createSession, hashPassword, hashSessionToken, newUser, parseCookies, sessionCookie, validateCredentials, verifyPassword } from "./auth.js";
+import { analyzePortfolio } from "./portfolio.js";
+import { calculateFinancialMetrics } from "./financial-metrics.js";
+import { parseMarketCap, screenStocks } from "./screener.js";
+import { buildCatalysts, parseCsv } from "./catalysts.js";
+import { buildEvidenceCatalog, citedText, relevantEvidenceIds, validateGroundedAnswer } from "./grounding.js";
+import { createScoreSnapshot, evaluateSnapshots, summarizeForwardValidation, summarizeRetrospective, trailingReturns } from "./validation.js";
+import { alertLabel, createAlertRule, evaluateAlert } from "./alerts.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 loadEnv();
 const port = Number(process.env.PORT || 3000);
 const cachePath = join(root, "data", "stocks.json");
 const lookupCachePath = join(root, "data", "lookups.json");
+const snapshotPath = join(root, "data", "score-snapshots.json");
+const authPath = process.env.AUTH_PATH || join(root, "data", "auth.json");
+const storage = createCacheStorage({
+  stockPath: cachePath,
+  lookupPath: lookupCachePath,
+  snapshotPath,
+  authPath,
+  databaseUrl: process.env.DATABASE_URL
+});
+const storageStartup = await storage.initialize();
 const supportedTickers = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
 const defaultCikByTicker = {
   AAPL: "0000320193",
@@ -22,6 +42,9 @@ const defaultCikByTicker = {
 };
 let secTickerMap = { ...defaultCikByTicker };
 let secTickerMapUpdatedAt = 0;
+const rateLimitBuckets = new Map();
+const validLenses = new Set(["balanced", "growth", "value"]);
+const validHorizons = new Set(["3 months", "12 months", "3 years"]);
 
 const demoStocks = {
   NVDA: {
@@ -257,6 +280,7 @@ const mimeTypes = {
   ".json": "application/json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8"
 };
+const publicAssets = new Set(["/index.html", "/styles.css", "/app.js", "/scoring.js"]);
 
 function loadEnv() {
   const envPath = join(root, ".env");
@@ -289,17 +313,61 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+function sendError(res, error) {
+  json(res, error.status || 500, { error: error.message || "Unexpected server error." });
+}
+
+function applySecurityHeaders(res) {
+  res.setHeader("x-content-type-options", "nosniff");
+  res.setHeader("x-frame-options", "DENY");
+  res.setHeader("referrer-policy", "strict-origin-when-cross-origin");
+  res.setHeader("permissions-policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("content-security-policy", "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+}
+
+function isRateLimited(req, url) {
+  if (!url.pathname.startsWith("/api/")) return false;
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const client = forwarded || req.socket.remoteAddress || "unknown";
+  const windowMs = 60_000;
+  const limit = req.method === "POST" ? 30 : 120;
+  const key = `${client}:${req.method}`;
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(key);
+
+  if (!bucket || now >= bucket.resetAt) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  bucket.count += 1;
+  return bucket.count > limit;
+}
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
       if (body.length > 1_000_000) {
-        reject(new Error("Request body is too large."));
+        reject(new HttpError(413, "Request body is too large."));
         req.destroy();
       }
     });
-    req.on("end", () => resolve(body ? JSON.parse(body) : {}));
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new HttpError(400, "Request body must be valid JSON."));
+      }
+    });
     req.on("error", reject);
   });
 }
@@ -312,32 +380,92 @@ function normalizeTicker(value) {
     .slice(0, 8) || "NVDA";
 }
 
-function loadStockCache() {
-  if (!existsSync(cachePath)) return {};
+function requireTicker(value) {
+  const ticker = String(value || "").trim().toUpperCase();
+  if (!/^[A-Z][A-Z.]{0,7}$/.test(ticker)) throw new HttpError(400, "Ticker must contain 1-8 letters or periods.");
+  return ticker;
+}
+
+function routeTicker(res, value) {
   try {
-    return JSON.parse(readFileSync(cachePath, "utf8"));
-  } catch {
-    return {};
+    return requireTicker(value);
+  } catch (error) {
+    sendError(res, error);
+    return null;
   }
+}
+
+function researchControls(body = {}) {
+  const ticker = requireTicker(body.ticker);
+  const lens = body.lens || "balanced";
+  const horizon = body.horizon || "12 months";
+  const risk = Number(body.risk ?? 3);
+
+  if (!validLenses.has(lens)) throw new HttpError(400, "Lens must be balanced, growth, or value.");
+  if (!validHorizons.has(horizon)) throw new HttpError(400, "Horizon must be 3 months, 12 months, or 3 years.");
+  if (!Number.isInteger(risk) || risk < 1 || risk > 5) throw new HttpError(400, "Risk must be an integer from 1 to 5.");
+  return { ticker, lens, horizon, risk };
+}
+
+function publicUser(user) {
+  return { id: user.id, email: user.email, watchlist: user.watchlist || [], portfolio: user.portfolio || [], alertCount: user.alerts?.length || 0, createdAt: user.createdAt };
+}
+
+function secureRequest(req) {
+  return String(req.headers["x-forwarded-proto"] || "").split(",")[0] === "https";
+}
+
+async function authenticatedUser(req) {
+  const token = parseCookies(req.headers.cookie).stock_session;
+  if (!token) return null;
+  const session = await storage.findSession(hashSessionToken(token));
+  return session ? storage.findUserById(session.userId) : null;
+}
+
+async function requireUser(req) {
+  const user = await authenticatedUser(req);
+  if (!user) throw new HttpError(401, "Sign in to manage saved account data.");
+  return user;
+}
+
+async function startUserSession(req, res, user) {
+  const session = createSession(user.id);
+  await storage.saveSession(session.record);
+  res.setHeader("set-cookie", sessionCookie(session.token, secureRequest(req)));
+}
+
+function queryControls(url) {
+  const lens = url.searchParams.get("lens") || "balanced";
+  const horizon = url.searchParams.get("horizon") || "12 months";
+  const risk = Number(url.searchParams.get("risk") || 3);
+  if (!validLenses.has(lens)) throw new HttpError(400, "Lens must be balanced, growth, or value.");
+  if (!validHorizons.has(horizon)) throw new HttpError(400, "Horizon must be 3 months, 12 months, or 3 years.");
+  if (!Number.isInteger(risk) || risk < 1 || risk > 5) throw new HttpError(400, "Risk must be an integer from 1 to 5.");
+  return { lens, horizon, risk };
+}
+
+function loadStockCache() {
+  return storage.get("stocks");
 }
 
 function loadLookupCache() {
-  if (!existsSync(lookupCachePath)) return {};
-  try {
-    return JSON.parse(readFileSync(lookupCachePath, "utf8"));
-  } catch {
-    return {};
-  }
+  return storage.get("lookups");
+}
+
+function loadScoreSnapshots() {
+  return storage.get("snapshots");
 }
 
 async function saveStockCache(cache) {
-  await mkdir(join(root, "data"), { recursive: true });
-  await writeFile(cachePath, `${JSON.stringify(cache, null, 2)}\n`);
+  await storage.replaceNamespace("stocks", cache);
 }
 
 async function saveLookupCache(cache) {
-  await mkdir(join(root, "data"), { recursive: true });
-  await writeFile(lookupCachePath, `${JSON.stringify(cache, null, 2)}\n`);
+  await storage.replaceNamespace("lookups", cache);
+}
+
+async function saveScoreSnapshots(cache) {
+  await storage.replaceNamespace("snapshots", cache);
 }
 
 function fallbackStock(ticker) {
@@ -427,54 +555,41 @@ function clamp(value, minimum, maximum) {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
-function parseMoney(value) {
-  const number = Number.parseFloat(String(value || "").replace(/[^0-9.-]/g, ""));
-  return Number.isFinite(number) ? number : null;
+function parseScaledFinancial(value) {
+  const text = String(value || "").replace(/[$,%+]/g, "").trim();
+  const number = Number.parseFloat(text);
+  if (!Number.isFinite(number)) return null;
+  const multiplier = text.endsWith("T") ? 1_000_000_000_000 : text.endsWith("B") ? 1_000_000_000 : text.endsWith("M") ? 1_000_000 : 1;
+  return number * multiplier;
+}
+
+function enrichCachedFinancialMetrics(stock) {
+  const context = { ...(stock.context || {}) };
+  const revenue = parseScaledFinancial(context.fiscalRevenue || stock.revenue);
+  const netIncome = parseScaledFinancial(context.fiscalNetIncome);
+  const assets = parseScaledFinancial(context.totalAssets);
+  const equity = parseScaledFinancial(context.stockholdersEquity);
+  const marketCap = parseScaledFinancial(stock.marketCap);
+  const metrics = calculateFinancialMetrics({ revenue, netIncome, assets, equity });
+
+  if (!context.netMargin && metrics.netMargin !== null) context.netMargin = `${metrics.netMargin.toFixed(1)}%`;
+  if (!context.returnOnAssets && metrics.returnOnAssets !== null) context.returnOnAssets = `${metrics.returnOnAssets.toFixed(1)}%`;
+  if (!context.returnOnEquity && metrics.returnOnEquity !== null) context.returnOnEquity = `${metrics.returnOnEquity.toFixed(1)}%`;
+  if (!context.priceToSales && marketCap !== null && revenue) context.priceToSales = (marketCap / revenue).toFixed(2);
+  return { ...stock, context };
 }
 
 function purchaseFitFor(stock, researchScore, risk, horizon) {
-  const growthPercent = Number(stock.context?.revenueGrowthPercent || 0);
-  const growthScore = clamp(50 + growthPercent * 1.25, 10, 100);
-  const price = Number(stock.price) || 0;
-  const high = parseMoney(stock.context?.fiftyTwoWeekHigh);
-  const low = parseMoney(stock.context?.fiftyTwoWeekLow);
-  const rangePercent = price > 0 && high !== null && low !== null ? ((high - low) / price) * 100 : 50;
-  let riskLevel = rangePercent <= 25 ? 1 : rangePercent <= 45 ? 2 : rangePercent <= 70 ? 3 : rangePercent <= 100 ? 4 : 5;
-  const pe = Number.parseFloat(stock.pe);
-  if (Number.isFinite(pe) && pe > 45) riskLevel = Math.min(5, riskLevel + 1);
-
-  const selectedRisk = clamp(Number(risk) || 3, 1, 5);
-  const riskFit = clamp(100 - Math.abs(selectedRisk - riskLevel) * 22, 20, 100);
-  const horizonFit = horizon === "3 months"
-    ? clamp(104 - riskLevel * 14, 30, 95)
-    : horizon === "3 years"
-      ? clamp(62 + growthScore * 0.32 - riskLevel * 2, 45, 96)
-      : clamp(82 - Math.abs(riskLevel - 3) * 7 + growthScore * 0.08, 45, 95);
-  const rawScore = (
-    clamp(Number(researchScore) || 65, 0, 100) * 0.45
-    + growthScore * 0.30
-    + riskFit * 0.15
-    + horizonFit * 0.10
-  );
-  const score = Math.round(clamp(100 - (100 - rawScore) * 1.3, 0, 100));
-  const label = score >= 80 ? "Strong fit" : score >= 65 ? "Good fit" : score >= 50 ? "Watch closely" : "Weak fit";
-
-  return {
-    score,
-    rawScore: Math.round(rawScore),
-    strictnessMultiplier: 1.3,
-    label,
-    growthPercent: Number(growthPercent.toFixed(1)),
-    estimatedRiskLevel: riskLevel,
-    selectedRisk,
-    horizon,
-    components: {
-      research: Math.round(clamp(Number(researchScore) || 65, 0, 100)),
-      growth: Math.round(growthScore),
-      riskFit: Math.round(riskFit),
-      horizonFit: Math.round(horizonFit)
-    }
-  };
+  return calculatePurchaseFit({
+    researchScore,
+    growthPercent: stock.context?.revenueGrowthPercent,
+    price: stock.price,
+    fiftyTwoWeekHigh: stock.context?.fiftyTwoWeekHigh,
+    fiftyTwoWeekLow: stock.context?.fiftyTwoWeekLow,
+    pe: stock.pe,
+    selectedRisk: risk,
+    horizon
+  });
 }
 
 function generatePath(stock, score) {
@@ -514,6 +629,12 @@ async function fetchJson(url, options = {}) {
   });
   if (!response.ok) throw new Error(`${url} returned ${response.status}.`);
   return response.json();
+}
+
+async function fetchText(url, options = {}) {
+  const response = await fetch(url, { ...options, signal: options.signal || AbortSignal.timeout(10000) });
+  if (!response.ok) throw new Error(`${url} returned ${response.status}.`);
+  return response.text();
 }
 
 async function resolveSecCik(ticker) {
@@ -721,7 +842,8 @@ async function fetchYahooHistory(ticker, horizon) {
   const settings = {
     "3 months": { range: "3mo", interval: "1d" },
     "12 months": { range: "1y", interval: "1d" },
-    "3 years": { range: "3y", interval: "1wk" }
+    "3 years": { range: "3y", interval: "1wk" },
+    "5 years": { range: "5y", interval: "1wk" }
   }[horizon] || { range: "1y", interval: "1d" };
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}`);
   url.searchParams.set("range", settings.range);
@@ -748,6 +870,26 @@ async function fetchYahooHistory(ticker, horizon) {
   };
 }
 
+async function captureScoreSnapshot(stock) {
+  const price = Number(stock.price);
+  if (!stock.ticker || !Number.isFinite(price) || price <= 0) return null;
+  const researchScore = scoreFor(stock, "balanced", 3);
+  const purchaseFit = purchaseFitFor(stock, researchScore, 3, "12 months");
+  const snapshots = loadScoreSnapshots();
+  const date = new Date().toISOString().slice(0, 10);
+  const key = `${date}:${stock.ticker}:balanced:3:12-months`;
+  snapshots[key] = createScoreSnapshot({
+    ticker: stock.ticker,
+    score: purchaseFit.score,
+    researchScore,
+    price,
+    capturedAt: new Date().toISOString(),
+    methodologyVersion: purchaseFit.methodologyVersion
+  });
+  await saveScoreSnapshots(snapshots);
+  return snapshots[key];
+}
+
 async function fetchAlphaVantageOverview(ticker) {
   const key = process.env.ALPHA_VANTAGE_API_KEY;
   if (!key) return null;
@@ -772,7 +914,11 @@ async function fetchAlphaVantageOverview(ticker) {
       analystTargetPrice: data.AnalystTargetPrice || "Unavailable",
       dividendYield: data.DividendYield && data.DividendYield !== "None" ? formatPercent(data.DividendYield) : "Unavailable",
       fiftyTwoWeekHigh: data["52WeekHigh"] || "Unavailable",
-      fiftyTwoWeekLow: data["52WeekLow"] || "Unavailable"
+      fiftyTwoWeekLow: data["52WeekLow"] || "Unavailable",
+      priceToSales: data.PriceToSalesRatioTTM && data.PriceToSalesRatioTTM !== "None" ? Number(data.PriceToSalesRatioTTM).toFixed(2) : "Unavailable",
+      evToEbitda: data.EVToEBITDA && data.EVToEBITDA !== "None" ? Number(data.EVToEBITDA).toFixed(2) : "Unavailable",
+      providerProfitMargin: data.ProfitMargin && data.ProfitMargin !== "None" ? formatPercent(data.ProfitMargin) : "Unavailable",
+      providerReturnOnEquity: data.ReturnOnEquityTTM && data.ReturnOnEquityTTM !== "None" ? formatPercent(data.ReturnOnEquityTTM) : "Unavailable"
     },
     source: "alpha-vantage",
     sourceItem: {
@@ -803,6 +949,63 @@ async function fetchAlphaVantageNews(ticker) {
     publishedAt: formatNewsDate(item.time_published),
     sentiment: item.overall_sentiment_label || "Unrated"
   }));
+}
+
+async function fetchAlphaVantageEarnings(ticker) {
+  const key = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!key) return null;
+  const url = new URL("https://www.alphavantage.co/query");
+  url.searchParams.set("function", "EARNINGS");
+  url.searchParams.set("symbol", ticker);
+  url.searchParams.set("apikey", key);
+  const data = await fetchJson(url);
+  const quarter = data.quarterlyEarnings?.[0];
+  if (!quarter) return null;
+  const reported = Number(quarter.reportedEPS);
+  const estimated = Number(quarter.estimatedEPS);
+  const surprisePercent = Number(quarter.surprisePercentage);
+  return {
+    context: {
+      latestEarningsDate: quarter.reportedDate || "Unavailable",
+      reportedEps: Number.isFinite(reported) ? reported : null,
+      estimatedEps: Number.isFinite(estimated) ? estimated : null,
+      earningsSurprisePercent: Number.isFinite(surprisePercent) ? surprisePercent : null,
+      earningsSurpriseLabel: Number.isFinite(surprisePercent) ? (surprisePercent > 2 ? "Beat" : surprisePercent < -2 ? "Miss" : "In line") : "Unavailable"
+    },
+    sourceItem: {
+      title: "Quarterly Earnings",
+      provider: "Alpha Vantage",
+      url: `https://www.alphavantage.co/query?function=EARNINGS&symbol=${ticker}`,
+      detail: "Latest reported EPS, consensus estimate, and earnings surprise percentage."
+    }
+  };
+}
+
+async function fetchAlphaVantageEarningsCalendar(ticker) {
+  const key = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!key) return null;
+  const url = new URL("https://www.alphavantage.co/query");
+  url.searchParams.set("function", "EARNINGS_CALENDAR");
+  url.searchParams.set("symbol", ticker);
+  url.searchParams.set("horizon", "12month");
+  url.searchParams.set("apikey", key);
+  const rows = parseCsv(await fetchText(url));
+  const entry = rows.find((row) => String(row.symbol || "").toUpperCase() === ticker) || rows[0];
+  if (!entry?.reportDate) return null;
+  return {
+    context: {
+      nextEarningsDate: entry.reportDate,
+      nextEarningsEstimate: entry.estimate || null,
+      nextFiscalPeriodEnd: entry.fiscalDateEnding || null,
+      earningsCurrency: entry.currency || "USD"
+    },
+    sourceItem: {
+      title: "Expected Earnings Calendar",
+      provider: "Alpha Vantage",
+      url: `https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&symbol=${ticker}&horizon=12month`,
+      detail: "Expected company earnings date and consensus EPS estimate for the next 12 months."
+    }
+  };
 }
 
 async function fetchSecCompanyFacts(ticker) {
@@ -838,6 +1041,18 @@ async function fetchSecCompanyFacts(ticker) {
   const operatingCashFlowFact = latestAnnualFact(facts.NetCashProvidedByUsedInOperatingActivities);
   const operatingIncomeFact = latestAnnualFact(facts.OperatingIncomeLoss);
   const dilutedEpsFact = latestAnnualFactForUnit(facts.EarningsPerShareDiluted, "USD/shares");
+  const capexFact = latestAnnualAcross([
+    facts.PaymentsToAcquirePropertyPlantAndEquipment,
+    facts.PaymentsForAdditionsToPropertyPlantAndEquipment
+  ]);
+  const cashFact = latestInstantFact(facts.CashAndCashEquivalentsAtCarryingValue);
+  const debtValue = totalDebtValue(facts);
+  const shareFacts = annualFactsForUnitAcross([
+    facts.WeightedAverageNumberOfDilutedSharesOutstanding,
+    facts.WeightedAverageNumberOfSharesOutstandingBasic
+  ], "shares");
+  const sharesFact = shareFacts[0] || null;
+  const priorSharesFact = shareFacts[1] || null;
 
   const revenue = revenueFact?.val;
   const revenueGrowthPercent = revenue && priorRevenueFact?.val
@@ -846,6 +1061,18 @@ async function fetchSecCompanyFacts(ticker) {
   const grossProfit = grossProfitFact?.val;
 
   const liabilities = liabilitiesFact?.val || (assetsFact?.val && equityFact?.val ? assetsFact.val - equityFact.val : null);
+  const financialMetrics = calculateFinancialMetrics({
+    revenue,
+    netIncome: netIncomeFact?.val,
+    operatingCashFlow: operatingCashFlowFact?.val,
+    capitalExpenditures: capexFact?.val,
+    assets: assetsFact?.val,
+    equity: equityFact?.val,
+    debt: debtValue,
+    cash: cashFact?.val,
+    shares: sharesFact?.val,
+    priorShares: priorSharesFact?.val
+  });
 
   return {
     revenue: revenue ? formatLargeNumber(revenue) : undefined,
@@ -868,6 +1095,20 @@ async function fetchSecCompanyFacts(ticker) {
       operatingCashFlow: operatingCashFlowFact?.val ? formatLargeNumber(operatingCashFlowFact.val) : "Unavailable",
       operatingIncome: operatingIncomeFact?.val ? formatLargeNumber(operatingIncomeFact.val) : "$0",
       dilutedEps: dilutedEpsFact?.val ? Number(dilutedEpsFact.val) : null,
+      capitalExpenditures: capexFact?.val ? formatLargeNumber(Math.abs(capexFact.val)) : "Unavailable",
+      freeCashFlow: financialMetrics.freeCashFlow !== null ? formatSignedLargeNumber(financialMetrics.freeCashFlow) : "Unavailable",
+      freeCashFlowMargin: financialMetrics.freeCashFlowMargin !== null ? `${financialMetrics.freeCashFlowMargin >= 0 ? "+" : ""}${financialMetrics.freeCashFlowMargin.toFixed(1)}%` : "Unavailable",
+      netMargin: financialMetrics.netMargin !== null ? `${financialMetrics.netMargin >= 0 ? "+" : ""}${financialMetrics.netMargin.toFixed(1)}%` : "Unavailable",
+      returnOnAssets: financialMetrics.returnOnAssets !== null ? `${financialMetrics.returnOnAssets.toFixed(1)}%` : "Unavailable",
+      returnOnEquity: financialMetrics.returnOnEquity !== null ? `${financialMetrics.returnOnEquity.toFixed(1)}%` : "Unavailable",
+      totalDebt: debtValue ? formatLargeNumber(debtValue) : "$0",
+      cashAndEquivalents: cashFact?.val ? formatLargeNumber(cashFact.val) : "Unavailable",
+      netDebt: financialMetrics.netDebt !== null ? formatSignedLargeNumber(financialMetrics.netDebt) : "Unavailable",
+      debtToEquity: financialMetrics.debtToEquity !== null ? financialMetrics.debtToEquity.toFixed(2) : "Unavailable",
+      dilutedShares: sharesFact?.val ? formatShareCount(sharesFact.val) : "Unavailable",
+      shareChangePercent: financialMetrics.shareChangePercent,
+      shareChange: financialMetrics.shareChangePercent !== null ? `${financialMetrics.shareChangePercent >= 0 ? "+" : ""}${financialMetrics.shareChangePercent.toFixed(1)}%` : "Unavailable",
+      dilutionLabel: financialMetrics.dilutionLabel,
       latestFiscalPeriod: revenueFact?.fy ? `${revenueFact.fy}${revenueFact.fp ? ` ${revenueFact.fp}` : ""}` : "Unavailable",
       latestFilingDate: revenueFact?.filed || "Unavailable"
     },
@@ -875,7 +1116,7 @@ async function fetchSecCompanyFacts(ticker) {
       title: "SEC EDGAR Company Facts",
       provider: "U.S. Securities and Exchange Commission",
       url,
-      detail: "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+      detail: "XBRL company facts for revenue, profitability, cash flow, debt, cash, equity, and diluted share trends."
     }
   };
 }
@@ -924,6 +1165,31 @@ function latestAnnualFactForUnit(concept, unit) {
 function latestInstantFact(concept) {
   return factCandidates(concept)
     .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+}
+
+function latestInstantAcross(concepts) {
+  return concepts.map(latestInstantFact).filter(Boolean)
+    .sort((a, b) => String(b.end).localeCompare(String(a.end)) || String(b.filed).localeCompare(String(a.filed)))[0] || null;
+}
+
+function totalDebtValue(facts) {
+  const combined = latestInstantFact(facts.LongTermDebtAndFinanceLeaseObligations);
+  if (combined?.val !== undefined) return Number(combined.val);
+  const current = latestInstantAcross([facts.LongTermDebtAndFinanceLeaseObligationsCurrent, facts.LongTermDebtCurrent]);
+  const noncurrent = latestInstantAcross([facts.LongTermDebtAndFinanceLeaseObligationsNoncurrent, facts.LongTermDebtNoncurrent]);
+  if (current || noncurrent) return Number(current?.val || 0) + Number(noncurrent?.val || 0);
+  return Number(latestInstantFact(facts.LongTermDebt)?.val || 0);
+}
+
+function annualFactsForUnitAcross(concepts, unit) {
+  const byPeriod = new Map();
+  for (const concept of concepts) {
+    for (const fact of unitFactCandidates(concept, unit).filter((item) => item.fp === "FY")) {
+      const current = byPeriod.get(fact.end);
+      if (!current || String(fact.filed).localeCompare(String(current.filed)) > 0) byPeriod.set(fact.end, fact);
+    }
+  }
+  return [...byPeriod.values()].sort((a, b) => String(b.end).localeCompare(String(a.end)));
 }
 
 async function buildStockSnapshot(ticker) {
@@ -991,6 +1257,32 @@ async function buildStockSnapshot(ticker) {
     warnings.push(error.message);
   }
 
+  try {
+    const earnings = await fetchAlphaVantageEarnings(ticker);
+    if (earnings) {
+      stock = {
+        ...stock,
+        context: { ...(stock.context || {}), ...(earnings.context || {}) },
+        sources: [...(stock.sources || []), earnings.sourceItem]
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
+  try {
+    const calendar = await fetchAlphaVantageEarningsCalendar(ticker);
+    if (calendar) {
+      stock = {
+        ...stock,
+        context: { ...(stock.context || {}), ...(calendar.context || {}) },
+        sources: [...(stock.sources || []), calendar.sourceItem]
+      };
+    }
+  } catch (error) {
+    warnings.push(error.message);
+  }
+
   const nasdaqFetches = await Promise.allSettled([
     fetchNasdaqProfile(ticker),
     fetchNasdaqAnalystTarget(ticker),
@@ -1018,7 +1310,15 @@ async function buildStockSnapshot(ticker) {
     stock.context = { ...(stock.context || {}), peMethod: "Current price divided by latest SEC diluted annual EPS" };
   }
 
-  return { stock: { ...stock, sources: dedupeSources(stock.sources) }, warnings };
+  stock = enrichCachedFinancialMetrics(stock);
+
+  const retrievedAt = new Date().toISOString();
+  const sources = dedupeSources(stock.sources).map((source) => ({
+    ...source,
+    retrievedAt: source.retrievedAt || retrievedAt
+  }));
+  stock = { ...stock, catalysts: buildCatalysts(stock) };
+  return { stock: { ...stock, sources }, warnings };
 }
 
 async function buildLiveQuote(ticker) {
@@ -1067,6 +1367,7 @@ async function refreshTrustedStocks(tickers = supportedTickers) {
       warnings
     };
     cache[ticker] = refreshed;
+    await captureScoreSnapshot(refreshed);
     results.push({ ticker, source: refreshed.source, warnings, sourceCount: refreshed.sources?.length || 0 });
   }
 
@@ -1092,6 +1393,25 @@ function formatLargeNumber(value) {
   if (number >= 1_000_000_000) return `$${(number / 1_000_000_000).toFixed(0)}B`;
   if (number >= 1_000_000) return `$${(number / 1_000_000).toFixed(0)}M`;
   return `$${number.toLocaleString("en-US")}`;
+}
+
+function formatSignedLargeNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  const sign = number < 0 ? "-$" : "$";
+  const absolute = Math.abs(number);
+  if (absolute >= 1_000_000_000_000) return `${sign}${(absolute / 1_000_000_000_000).toFixed(1)}T`;
+  if (absolute >= 1_000_000_000) return `${sign}${(absolute / 1_000_000_000).toFixed(0)}B`;
+  if (absolute >= 1_000_000) return `${sign}${(absolute / 1_000_000).toFixed(0)}M`;
+  return `${sign}${absolute.toLocaleString("en-US")}`;
+}
+
+function formatShareCount(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "Unavailable";
+  if (number >= 1_000_000_000) return `${(number / 1_000_000_000).toFixed(2)}B`;
+  if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(1)}M`;
+  return number.toLocaleString("en-US");
 }
 
 function formatPercent(value) {
@@ -1139,6 +1459,15 @@ Industry: ${input.stock.context?.industry || "Unavailable"}
 Company description: ${input.stock.context?.description || "Unavailable"}
 Analyst target price: ${input.stock.context?.analystTargetPrice || "Unavailable"}
 52-week range: ${input.stock.context?.fiftyTwoWeekLow || "Unavailable"} to ${input.stock.context?.fiftyTwoWeekHigh || "Unavailable"}
+Free cash flow: ${input.stock.context?.freeCashFlow || "Unavailable"}
+Free cash flow margin: ${input.stock.context?.freeCashFlowMargin || "Unavailable"}
+Net margin: ${input.stock.context?.netMargin || input.stock.context?.providerProfitMargin || "Unavailable"}
+Return on equity: ${input.stock.context?.returnOnEquity || input.stock.context?.providerReturnOnEquity || "Unavailable"}
+Total debt: ${input.stock.context?.totalDebt || "Unavailable"}
+Net debt: ${input.stock.context?.netDebt || "Unavailable"}
+Debt to equity: ${input.stock.context?.debtToEquity || "Unavailable"}
+Annual diluted share change: ${input.stock.context?.shareChange || "Unavailable"}
+Latest EPS surprise: ${input.stock.context?.earningsSurprisePercent ?? "Unavailable"}%
 Recent news context: ${JSON.stringify(input.stock.context?.latestNews || [])}
 Lens: ${input.lens}
 Horizon: ${input.horizon}
@@ -1204,31 +1533,26 @@ Rules:
   };
 }
 
-function localChat({ question, brief }) {
+function localChat({ question, brief, evidence }) {
   const q = String(question || "").toLowerCase();
   const clean = (value) => String(value || "").replace(/[.!?]+$/, "");
+  const sourceIds = relevantEvidenceIds(question, evidence);
+  let text;
 
   if (q.includes("valuation") || q.includes("multiple") || q.includes("pe")) {
-    return `${brief.ticker} has a forward P/E marker of ${brief.pe}. With a research score of ${brief.score}, I would compare earnings growth, free cash flow conversion, and margin durability before increasing position size.`;
+    text = `${brief.ticker} has a forward P/E marker of ${brief.pe}. With a research score of ${brief.score}, compare earnings growth, free cash flow conversion, and margin durability against that valuation.`;
+  } else if (q.includes("risk") || q.includes("bear")) {
+    text = `The main bear case is ${clean(brief.risks?.[0] || "execution or demand weakens")}. A second issue to monitor is ${clean(brief.risks?.[1] || "valuation sensitivity")}.`;
+  } else if (q.includes("catalyst") || q.includes("driver")) {
+    text = `The clearest driver is ${clean(brief.drivers?.[0] || "continued execution against growth expectations")}. Also monitor ${clean(brief.drivers?.[1] || "margin performance")}.`;
+  } else if (q.includes("margin") || q.includes("profit")) {
+    text = `${brief.name}'s reported margin marker is ${brief.margin}. The key question is whether revenue growth produces operating leverage or is absorbed by reinvestment, pricing pressure, or competition.`;
+  } else if (q.includes("what would change") || q.includes("change the thesis")) {
+    text = `The thesis should change if these checks begin failing: ${brief.checks?.slice(0, 2).map(clean).join(". ")}. The score should decline if they weaken and improve only when execution strengthens without valuation becoming less attractive.`;
+  } else {
+    text = `The current research thesis for ${brief.ticker} is: ${brief.thesis}`;
   }
-
-  if (q.includes("risk") || q.includes("bear")) {
-    return `The most important bear case is: ${clean(brief.risks?.[0] || "the thesis weakens if execution or demand slows")}. The next check is: ${clean(brief.risks?.[1] || "valuation sensitivity")}.`;
-  }
-
-  if (q.includes("catalyst") || q.includes("driver")) {
-    return `The cleanest catalyst is: ${clean(brief.drivers?.[0] || "continued execution against growth expectations")}. I would also watch: ${clean(brief.drivers?.[1] || "margin performance")}.`;
-  }
-
-  if (q.includes("margin") || q.includes("profit")) {
-    return `${brief.name}'s margin marker is ${brief.margin}. The question is whether revenue growth produces operating leverage or gets absorbed by reinvestment, pricing pressure, or competition.`;
-  }
-
-  if (q.includes("what would change") || q.includes("change the thesis")) {
-    return `I would change the thesis if the next checks start failing: ${brief.checks?.slice(0, 2).map(clean).join(". ")}. The score should move down if those weaken, and up if they improve while valuation stays reasonable.`;
-  }
-
-  return `For ${brief.ticker}, I would anchor the answer in this thesis: ${brief.thesis}`;
+  return validateGroundedAnswer({ claims: [{ text, sourceIds }], caveat: "Research support only; verify material decisions against the linked primary sources." }, evidence);
 }
 
 async function aiChat(input) {
@@ -1236,13 +1560,18 @@ async function aiChat(input) {
   if (!key) return null;
 
   const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-  const prompt = `You are an equity research assistant. Answer the user's question using only the brief below.
+  const prompt = `You are an equity research assistant. Answer the user's question using only the evidence and brief below.
 
 Rules:
 - Be concise and practical.
 - Do not provide personalized financial advice.
 - Do not claim access to live news, filings, or prices beyond the provided context.
 - If the user asks for a buy/sell decision, frame decision criteria instead.
+- Return 1 to 3 claims. Every claim must cite one or more source IDs from the evidence catalog.
+- Never invent a source ID. If the evidence is insufficient, state that in the caveat and omit the unsupported claim.
+
+Evidence catalog:
+${JSON.stringify(input.evidence, null, 2)}
 
 Brief:
 ${JSON.stringify(input.brief, null, 2)}
@@ -1260,7 +1589,32 @@ ${input.question}`;
       model,
       input: prompt,
       text: {
-        format: { type: "text" },
+        format: {
+          type: "json_schema",
+          name: "grounded_stock_answer",
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["claims", "caveat"],
+            properties: {
+              claims: {
+                type: "array",
+                minItems: 1,
+                maxItems: 3,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["text", "sourceIds"],
+                  properties: {
+                    text: { type: "string" },
+                    sourceIds: { type: "array", minItems: 1, maxItems: 4, items: { type: "string" } }
+                  }
+                }
+              },
+              caveat: { type: "string" }
+            }
+          }
+        },
         verbosity: "low"
       }
     })
@@ -1272,7 +1626,14 @@ ${input.question}`;
   }
 
   const data = await response.json();
-  return extractOutputText(data);
+  const text = extractOutputText(data);
+  if (!text) return null;
+  try {
+    const grounded = validateGroundedAnswer(JSON.parse(text), input.evidence);
+    return grounded.grounded ? grounded : null;
+  } catch {
+    return null;
+  }
 }
 
 async function handleQuote(req, res, ticker) {
@@ -1294,7 +1655,7 @@ async function handleLookup(req, res, ticker) {
       cachedSeparately: !supportedTickers.includes(ticker)
     });
   } catch (error) {
-    json(res, 500, { error: error.message });
+    sendError(res, error);
   }
 }
 
@@ -1327,9 +1688,7 @@ async function handleComparison(req, res) {
       .map(normalizeTicker)
       .filter(Boolean)
       .slice(0, 25);
-    const lens = url.searchParams.get("lens") || "balanced";
-    const risk = Number(url.searchParams.get("risk") || 3);
-    const horizon = url.searchParams.get("horizon") || "12 months";
+    const { lens, risk, horizon } = queryControls(url);
     const cache = loadStockCache();
     const rows = requested.map((ticker) => {
       const base = cache[ticker] || fallbackStock(ticker);
@@ -1362,7 +1721,140 @@ async function handleComparison(req, res) {
       warnings: []
     });
   } catch (error) {
-    json(res, 500, { error: error.message });
+    sendError(res, error);
+  }
+}
+
+async function handleScreener(req, res) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const { lens, risk, horizon } = queryControls(url);
+    const maxRisk = Number(url.searchParams.get("maxRisk") || 5);
+    if (!Number.isInteger(maxRisk) || maxRisk < 1 || maxRisk > 5) throw new HttpError(400, "Maximum risk must be an integer from 1 to 5.");
+    const allStocks = { ...loadStockCache(), ...loadLookupCache() };
+    const rows = Object.entries(allStocks).map(([ticker, cached]) => {
+      const stock = enrichCachedFinancialMetrics({ ticker, ...cached });
+      const score = scoreFor(stock, lens, risk);
+      const purchaseFit = purchaseFitFor(stock, score, risk, horizon);
+      return {
+        ticker,
+        name: stock.name || ticker,
+        sector: stock.context?.sector || "Not classified",
+        industry: stock.context?.industry || "Not classified",
+        price: Number(stock.price) || 0,
+        marketCap: stock.marketCap || "Not reported",
+        marketCapValue: parseMarketCap(stock.marketCap),
+        pe: Number.parseFloat(stock.pe),
+        growthPercent: Number(stock.context?.revenueGrowthPercent || 0),
+        margin: stock.context?.netMargin || stock.margin || "Unavailable",
+        score,
+        purchaseScore: purchaseFit.score,
+        riskLevel: purchaseFit.estimatedRiskLevel,
+        refreshedAt: stock.refreshedAt || stock.quoteUpdatedAt || "Unavailable"
+      };
+    });
+    const filters = {
+      query: url.searchParams.get("query") || "",
+      sector: url.searchParams.get("sector") || "all",
+      minGrowth: url.searchParams.get("minGrowth"),
+      maxPe: url.searchParams.get("maxPe"),
+      minScore: url.searchParams.get("minScore"),
+      minPurchaseScore: url.searchParams.get("minPurchaseScore"),
+      maxRisk,
+      minMarketCap: url.searchParams.get("minMarketCap"),
+      sort: url.searchParams.get("sort") || "purchaseScore"
+    };
+    const results = screenStocks(rows, filters);
+    const sectors = [...new Set(rows.map((row) => row.sector))].sort();
+    json(res, 200, { updatedAt: new Date().toISOString(), universeSize: rows.length, resultCount: results.length, sectors, filters, rows: results });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function handleValidation(req, res) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const { lens, risk, horizon } = queryControls(url);
+    const requested = (url.searchParams.get("tickers") || supportedTickers.join(","))
+      .split(",")
+      .map(requireTicker)
+      .slice(0, 12);
+    const cache = { ...loadStockCache(), ...loadLookupCache() };
+    const histories = await Promise.allSettled(requested.map((ticker) => fetchYahooHistory(ticker, "5 years")));
+    const rows = [];
+    const warnings = [];
+
+    histories.forEach((result, index) => {
+      const ticker = requested[index];
+      const stock = enrichCachedFinancialMetrics({ ticker, ...(cache[ticker] || fallbackStock(ticker)) });
+      if (result.status === "rejected") {
+        warnings.push(`${ticker}: ${result.reason?.message || "History unavailable."}`);
+        return;
+      }
+      const researchScore = scoreFor(stock, lens, risk);
+      const purchaseFit = purchaseFitFor(stock, researchScore, risk, horizon);
+      rows.push({
+        ticker,
+        name: stock.name || ticker,
+        researchScore,
+        purchaseScore: purchaseFit.score,
+        returns: trailingReturns(result.value.points),
+        source: result.value.source
+      });
+    });
+
+    const snapshotCache = loadScoreSnapshots();
+    const selectedSnapshots = Object.values(snapshotCache).filter((snapshot) => requested.includes(snapshot.ticker));
+    const currentPrices = Object.fromEntries(Object.entries(cache).map(([ticker, stock]) => [ticker, Number(stock.price) || 0]));
+    const snapshotTickers = [...new Set(selectedSnapshots.map((snapshot) => snapshot.ticker))];
+    const liveQuotes = await Promise.all(snapshotTickers.map((ticker) => buildLiveQuote(ticker)));
+    liveQuotes.forEach(({ quote, warnings: quoteWarnings }, index) => {
+      const ticker = snapshotTickers[index];
+      if (Number(quote?.price) > 0) currentPrices[ticker] = Number(quote.price);
+      quoteWarnings.forEach((warning) => warnings.push(`${ticker} quote: ${warning}`));
+    });
+    const evaluated = evaluateSnapshots(selectedSnapshots, currentPrices);
+    for (const snapshot of evaluated) {
+      const key = `${snapshot.capturedAt.slice(0, 10)}:${snapshot.ticker}:balanced:3:12-months`;
+      snapshotCache[key] = snapshot;
+    }
+    await saveScoreSnapshots(snapshotCache);
+
+    json(res, 200, {
+      generatedAt: new Date().toISOString(),
+      controls: { lens, risk, horizon },
+      retrospective: {
+        rows,
+        summary: summarizeRetrospective(rows),
+        limitation: "Retrospective association uses today's score against historical trailing returns. It is look-ahead biased and is not a point-in-time backtest."
+      },
+      forward: {
+        snapshotCount: evaluated.length,
+        firstCapturedAt: evaluated.map((item) => item.capturedAt).sort()[0] || null,
+        summary: summarizeForwardValidation(evaluated),
+        limitation: "Forward validation is unbiased but requires snapshots to age for 3, 6, and 12 months before outcomes mature."
+      },
+      warnings
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function handleCatalysts(req, res, ticker) {
+  try {
+    const stock = enrichCachedFinancialMetrics(fallbackStock(ticker));
+    const events = buildCatalysts(stock);
+    json(res, 200, {
+      ticker,
+      name: stock.name || ticker,
+      updatedAt: stock.refreshedAt || stock.quoteUpdatedAt || new Date().toISOString(),
+      nextEarningsDate: stock.context?.nextEarningsDate || null,
+      events
+    });
+  } catch (error) {
+    sendError(res, error);
   }
 }
 
@@ -1370,29 +1862,33 @@ async function handlePriceHistory(req, res, ticker) {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const horizon = url.searchParams.get("horizon") || "12 months";
+    if (!validHorizons.has(horizon)) throw new HttpError(400, "Horizon must be 3 months, 12 months, or 3 years.");
     const history = await fetchYahooHistory(ticker, horizon);
     json(res, 200, history);
   } catch (error) {
-    json(res, 502, { error: error.message });
+    if (error instanceof HttpError) sendError(res, error);
+    else json(res, 502, { error: error.message });
   }
 }
 
 async function handleResearch(req, res) {
   try {
     const body = await readBody(req);
-    const ticker = normalizeTicker(body.ticker);
+    const controls = researchControls(body);
+    const { ticker } = controls;
     const { stock, warnings } = await buildStockSnapshot(ticker);
     await saveLookupStock(stock, warnings);
     const input = {
       stock,
-      lens: body.lens || "balanced",
-      horizon: body.horizon || "12 months",
-      risk: Number(body.risk || 3)
+      lens: controls.lens,
+      horizon: controls.horizon,
+      risk: controls.risk
     };
     const brief = (await aiResearch(input)) || localResearch(input);
+    await captureScoreSnapshot(stock);
     json(res, 200, { brief: { ...brief, warnings } });
   } catch (error) {
-    json(res, 500, { error: error.message });
+    sendError(res, error);
   }
 }
 
@@ -1400,40 +1896,261 @@ async function handleChat(req, res) {
   try {
     const body = await readBody(req);
     const question = String(body.question || "").trim();
-    const brief = body.brief || fallbackStock(normalizeTicker(body.ticker));
+    const ticker = requireTicker(body.ticker || body.brief?.ticker);
+    const trustedStock = enrichCachedFinancialMetrics(fallbackStock(ticker));
+    const submitted = body.brief || {};
+    const brief = {
+      ...submitted,
+      ...trustedStock,
+      ticker,
+      score: Number(submitted.score || trustedStock.score || 65),
+      thesis: submitted.thesis || trustedStock.thesis,
+      drivers: Array.isArray(submitted.drivers) ? submitted.drivers.slice(0, 3) : trustedStock.drivers,
+      risks: Array.isArray(submitted.risks) ? submitted.risks.slice(0, 3) : trustedStock.risks,
+      checks: Array.isArray(submitted.checks) ? submitted.checks.slice(0, 3) : trustedStock.checks,
+      sources: trustedStock.sources || [],
+      context: trustedStock.context || {}
+    };
 
     if (!question) {
       json(res, 400, { error: "Question is required." });
       return;
     }
+    if (question.length > 500) throw new HttpError(400, "Question must be 500 characters or fewer.");
 
-    const answer = (await aiChat({ question, brief })) || localChat({ question, brief });
+    const evidence = buildEvidenceCatalog(brief);
+    let groundedAnswer = null;
+    let generatedBy = "local";
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        groundedAnswer = await aiChat({ question, brief, evidence });
+        if (groundedAnswer) generatedBy = "openai";
+      } catch {
+        groundedAnswer = null;
+      }
+    }
+    groundedAnswer ||= localChat({ question, brief, evidence });
+    const citedSources = evidence.filter((source) => groundedAnswer.claims.some((claim) => claim.sourceIds.includes(source.id)));
     json(res, 200, {
-      answer,
-      generatedBy: process.env.OPENAI_API_KEY ? "openai" : "local"
+      answer: citedText(groundedAnswer.claims),
+      claims: groundedAnswer.claims,
+      citations: citedSources,
+      caveat: groundedAnswer.caveat,
+      grounded: groundedAnswer.grounded,
+      generatedBy
     });
   } catch (error) {
-    json(res, 500, { error: error.message });
+    sendError(res, error);
   }
 }
 
 async function handleRefresh(req, res) {
   try {
     const body = await readBody(req);
-    const tickers = Array.isArray(body.tickers) && body.tickers.length ? body.tickers : supportedTickers;
+    const tickers = Array.isArray(body.tickers) && body.tickers.length
+      ? body.tickers.slice(0, 25).map(requireTicker)
+      : supportedTickers;
     const refresh = await refreshTrustedStocks(tickers);
     json(res, 200, {
       refreshedAt: refresh.refreshedAt,
       results: refresh.results
     });
   } catch (error) {
-    json(res, 500, { error: error.message });
+    sendError(res, error);
+  }
+}
+
+async function handleSignup(req, res) {
+  try {
+    const body = await readBody(req);
+    let credentials;
+    try {
+      credentials = validateCredentials(body.email, body.password);
+    } catch (error) {
+      throw new HttpError(400, error.message);
+    }
+    if (await storage.findUserByEmail(credentials.email)) throw new HttpError(409, "An account already exists for this email.");
+    const user = newUser(credentials.email, await hashPassword(credentials.password));
+    user.watchlist = [...defaultWatchlistForAccount()];
+    await storage.createUser(user);
+    await startUserSession(req, res, user);
+    json(res, 201, { user: publicUser(user) });
+  } catch (error) {
+    if (error.code === "23505") error = new HttpError(409, "An account already exists for this email.");
+    sendError(res, error);
+  }
+}
+
+function defaultWatchlistForAccount() {
+  return ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "META", "JPM", "DIS"];
+}
+
+async function handleLogin(req, res) {
+  try {
+    const body = await readBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const user = await storage.findUserByEmail(email);
+    if (!user || !(await verifyPassword(String(body.password || ""), user.passwordHash))) {
+      throw new HttpError(401, "Email or password is incorrect.");
+    }
+    await startUserSession(req, res, user);
+    json(res, 200, { user: publicUser(user) });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function handleLogout(req, res) {
+  try {
+    const token = parseCookies(req.headers.cookie).stock_session;
+    if (token) await storage.deleteSession(hashSessionToken(token));
+    res.setHeader("set-cookie", clearSessionCookie(secureRequest(req)));
+    json(res, 200, { signedOut: true });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function handleCurrentUser(req, res) {
+  try {
+    const user = await authenticatedUser(req);
+    json(res, 200, { user: user ? publicUser(user) : null });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function handleWatchlist(req, res) {
+  try {
+    const user = await requireUser(req);
+    if (req.method === "GET") {
+      json(res, 200, { tickers: user.watchlist || [] });
+      return;
+    }
+    const body = await readBody(req);
+    if (!Array.isArray(body.tickers)) throw new HttpError(400, "Tickers must be an array.");
+    const tickers = [...new Set(body.tickers.map(requireTicker))].slice(0, 30);
+    await storage.updateWatchlist(user.id, tickers);
+    json(res, 200, { tickers });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+function validatedHoldings(value) {
+  if (!Array.isArray(value)) throw new HttpError(400, "Holdings must be an array.");
+  if (value.length > 50) throw new HttpError(400, "A portfolio can contain up to 50 holdings.");
+  const byTicker = new Map();
+  for (const item of value) {
+    const ticker = requireTicker(item?.ticker);
+    const shares = Number(item?.shares);
+    const averageCost = Number(item?.averageCost);
+    if (!Number.isFinite(shares) || shares <= 0 || shares > 1_000_000_000) throw new HttpError(400, `Shares for ${ticker} must be greater than zero.`);
+    if (!Number.isFinite(averageCost) || averageCost < 0 || averageCost > 10_000_000) throw new HttpError(400, `Average cost for ${ticker} must be zero or greater.`);
+    byTicker.set(ticker, { ticker, shares: Number(shares.toFixed(4)), averageCost: Number(averageCost.toFixed(2)) });
+  }
+  return [...byTicker.values()];
+}
+
+async function portfolioAnalysis(holdings) {
+  const quotes = await Promise.all(holdings.map(async (holding) => {
+    const base = fallbackStock(holding.ticker);
+    const live = await buildLiveQuote(holding.ticker);
+    const stockForRisk = { ...base, price: live.quote.price || base.price };
+    const fit = purchaseFitFor(stockForRisk, Number(base.score) || 65, 3, "12 months");
+    return [holding.ticker, {
+      name: base.name,
+      sector: base.context?.sector || "Unclassified",
+      price: live.quote.price || base.price,
+      quoteSource: live.quote.quoteSource,
+      quoteUpdatedAt: live.quote.quoteUpdatedAt,
+      riskLevel: fit.estimatedRiskLevel
+    }];
+  }));
+  return analyzePortfolio(holdings, Object.fromEntries(quotes));
+}
+
+async function handlePortfolio(req, res) {
+  try {
+    const user = await requireUser(req);
+    let holdings = user.portfolio || [];
+    if (req.method === "PUT") {
+      const body = await readBody(req);
+      holdings = validatedHoldings(body.holdings);
+      await storage.updatePortfolio(user.id, holdings);
+    }
+    const analysis = await portfolioAnalysis(holdings);
+    json(res, 200, { holdings, analysis, updatedAt: new Date().toISOString() });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function evaluateUserAlerts(rules = []) {
+  const tickers = [...new Set(rules.map((rule) => rule.ticker))];
+  const quoteResults = await Promise.all(tickers.map((ticker) => buildLiveQuote(ticker)));
+  const quotes = Object.fromEntries(quoteResults.map((result, index) => [tickers[index], result]));
+
+  return rules.map((rule) => {
+    const stock = enrichCachedFinancialMetrics(fallbackStock(rule.ticker));
+    const live = quotes[rule.ticker];
+    const price = Number(live?.quote?.price) || Number(stock.price) || 0;
+    const pricedStock = { ...stock, price };
+    const researchScore = scoreFor(pricedStock, rule.lens, rule.risk);
+    const fit = purchaseFitFor(pricedStock, researchScore, rule.risk, rule.horizon);
+    const currentValue = rule.metric === "price" ? price : fit.score;
+    return {
+      ...evaluateAlert(rule, currentValue),
+      label: alertLabel(rule),
+      quoteSource: live?.quote?.quoteSource || stock.quoteSource || stock.source || "cache",
+      evaluatedAt: new Date().toISOString()
+    };
+  });
+}
+
+function storedAlerts(alerts) {
+  return alerts.map(({ label, quoteSource, evaluatedAt, ...alert }) => alert);
+}
+
+async function handleAlerts(req, res, alertId = null) {
+  try {
+    const user = await requireUser(req);
+    let alerts = user.alerts || [];
+
+    if (req.method === "POST") {
+      if (alerts.length >= 30) throw new HttpError(400, "An account can have up to 30 alerts.");
+      const body = await readBody(req);
+      try {
+        alerts = [...alerts, createAlertRule(body)];
+      } catch (error) {
+        throw new HttpError(400, error.message);
+      }
+    } else if (req.method === "DELETE") {
+      const next = alerts.filter((alert) => alert.id !== alertId);
+      if (next.length === alerts.length) throw new HttpError(404, "Alert not found.");
+      alerts = next;
+    }
+
+    const evaluated = await evaluateUserAlerts(alerts);
+    await storage.updateAlerts(user.id, storedAlerts(evaluated));
+    json(res, 200, {
+      alerts: evaluated,
+      triggeredCount: evaluated.filter((alert) => alert.isTriggered).length,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    sendError(res, error);
   }
 }
 
 async function serveStatic(req, res) {
   const requestPath = new URL(req.url, `http://${req.headers.host}`).pathname;
   const requested = requestPath === "/" ? "/index.html" : requestPath;
+  if (!publicAssets.has(requested)) {
+    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Not found");
+    return;
+  }
   const safePath = normalize(decodeURIComponent(requested)).replace(/^(\.\.[/\\])+/, "");
   const filePath = join(root, safePath);
 
@@ -1458,23 +2175,75 @@ export const server = createServer(async (req, res) => {
   const tickerMatch = url.pathname.match(/^\/api\/quote\/([^/]+)$/);
   const lookupMatch = url.pathname.match(/^\/api\/lookup\/([^/]+)$/);
   const historyMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);
+  const catalystMatch = url.pathname.match(/^\/api\/catalysts\/([^/]+)$/);
+  const alertMatch = url.pathname.match(/^\/api\/alerts\/([^/]+)$/);
+  applySecurityHeaders(res);
+
+  if (isRateLimited(req, url)) {
+    res.setHeader("retry-after", "60");
+    json(res, 429, { error: "Too many requests. Try again in one minute." });
+    return;
+  }
 
   if (req.method === "GET" && url.pathname === "/health") {
     json(res, 200, {
       status: "ok",
       service: "ai-stock-research-assistant",
+      storage: storage.status(),
       timestamp: new Date().toISOString()
     });
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/auth/signup") {
+    await handleSignup(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/login") {
+    await handleLogin(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/logout") {
+    await handleLogout(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/auth/me") {
+    await handleCurrentUser(req, res);
+    return;
+  }
+
+  if ((req.method === "GET" || req.method === "PUT") && url.pathname === "/api/watchlist") {
+    await handleWatchlist(req, res);
+    return;
+  }
+
+  if ((req.method === "GET" || req.method === "PUT") && url.pathname === "/api/portfolio") {
+    await handlePortfolio(req, res);
+    return;
+  }
+
+  if ((req.method === "GET" || req.method === "POST") && url.pathname === "/api/alerts") {
+    await handleAlerts(req, res);
+    return;
+  }
+
+  if (req.method === "DELETE" && alertMatch) {
+    await handleAlerts(req, res, decodeURIComponent(alertMatch[1]));
+    return;
+  }
+
   if (req.method === "GET" && tickerMatch) {
-    await handleQuote(req, res, normalizeTicker(tickerMatch[1]));
+    const ticker = routeTicker(res, tickerMatch[1]);
+    if (ticker) await handleQuote(req, res, ticker);
     return;
   }
 
   if (req.method === "GET" && lookupMatch) {
-    await handleLookup(req, res, normalizeTicker(lookupMatch[1]));
+    const ticker = routeTicker(res, lookupMatch[1]);
+    if (ticker) await handleLookup(req, res, ticker);
     return;
   }
 
@@ -1488,8 +2257,25 @@ export const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/screener") {
+    await handleScreener(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/validation") {
+    await handleValidation(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && catalystMatch) {
+    const ticker = routeTicker(res, catalystMatch[1]);
+    if (ticker) await handleCatalysts(req, res, ticker);
+    return;
+  }
+
   if (req.method === "GET" && historyMatch) {
-    await handlePriceHistory(req, res, normalizeTicker(historyMatch[1]));
+    const ticker = routeTicker(res, historyMatch[1]);
+    if (ticker) await handlePriceHistory(req, res, ticker);
     return;
   }
 
@@ -1517,5 +2303,5 @@ export const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`AI Stock Research Assistant running at http://localhost:${port}`);
+  console.log(`AI Stock Research Assistant running at http://localhost:${port} with ${storageStartup.backend} storage`);
 });

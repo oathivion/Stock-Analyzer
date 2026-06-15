@@ -23,6 +23,14 @@
           </div>
         </div>
 
+        <section class="account-panel" aria-label="Account">
+          <div>
+            <span id="accountLabel">Guest watchlist</span>
+            <strong id="accountEmail">Not signed in</strong>
+          </div>
+          <button class="text-button" id="accountButton" type="button">Sign in</button>
+        </section>
+
         <form class="research-form" id="researchForm">
           <label for="tickerInput">Stock ticker lookup</label>
           <div class="search-row">
@@ -83,6 +91,7 @@
           <div class="section-title">
             <h2>Watchlist</h2>
             <div class="watch-actions">
+              <button class="text-button" id="saveTickerButton" type="button">Save stock</button>
               <button class="text-button" id="refreshButton" type="button">Refresh data</button>
               <button class="text-button" id="resetButton" type="button">Reset</button>
             </div>
@@ -167,6 +176,82 @@
           </article>
         </section>
 
+        <section class="fundamentals-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Expanded Fundamentals</h3>
+              <p id="fundamentalsStatus">Source-backed operating, balance-sheet, valuation, and earnings metrics.</p>
+            </div>
+          </div>
+          <div class="fundamentals-grid" id="fundamentalsGrid"></div>
+        </section>
+
+        <section class="catalyst-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Earnings & Catalysts</h3>
+              <p id="catalystStatus">Loading scheduled events and monitoring signals...</p>
+            </div>
+            <select id="catalystFilter" aria-label="Filter catalysts">
+              <option value="all">All events</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="recent">Recent</option>
+              <option value="monitor">Monitor</option>
+            </select>
+          </div>
+          <div class="catalyst-timeline" id="catalystTimeline"></div>
+        </section>
+
+        <section class="screener-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Stock Discovery</h3>
+              <p id="screenerStatus">Screening the trusted research universe.</p>
+            </div>
+          </div>
+          <form class="screener-form" id="screenerForm">
+            <label><span>Company</span><input id="screenQuery" type="search" placeholder="Ticker or name" /></label>
+            <label><span>Sector</span><select id="screenSector"><option value="all">All sectors</option></select></label>
+            <label><span>Min growth %</span><input id="screenGrowth" type="number" step="1" placeholder="0" /></label>
+            <label><span>Max P/E</span><input id="screenPe" type="number" min="0" step="1" placeholder="Any" /></label>
+            <label><span>Min market cap</span><select id="screenMarketCap"><option value="">Any size</option><option value="2000000000">$2B+</option><option value="10000000000">$10B+</option><option value="100000000000">$100B+</option><option value="1000000000000">$1T+</option></select></label>
+            <label><span>Max risk</span><select id="screenRisk"><option value="5">5 - Any</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1 - Low</option></select></label>
+            <label><span>Min research</span><input id="screenScore" type="number" min="0" max="100" step="5" placeholder="Any" /></label>
+            <label><span>Min purchase fit</span><input id="screenPurchase" type="number" min="0" max="100" step="5" placeholder="Any" /></label>
+            <label><span>Sort by</span><select id="screenSort"><option value="purchaseScore">Purchase fit</option><option value="score">Research score</option><option value="growthPercent">Growth</option><option value="marketCapValue">Market cap</option><option value="pe">Lowest P/E</option><option value="riskLevel">Lowest risk</option></select></label>
+            <button class="command-button" type="submit">Apply filters</button>
+            <button class="secondary-button" id="resetScreenerButton" type="button">Reset</button>
+          </form>
+          <div class="table-wrap">
+            <table class="screener-table">
+              <thead><tr><th>Company</th><th>Sector</th><th>Price</th><th>Market cap</th><th>Growth</th><th>P/E</th><th>Margin</th><th>Risk</th><th>Research</th><th>Purchase fit</th></tr></thead>
+              <tbody id="screenerBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="validation-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Purchase Fit Validation</h3>
+              <p id="validationStatus">Comparing score tiers with historical outcomes and tracking forward snapshots.</p>
+            </div>
+            <button class="secondary-button" id="runValidationButton" type="button">Run validation</button>
+          </div>
+          <div class="validation-summary" id="validationSummary"></div>
+          <div class="validation-notice" id="validationNotice"></div>
+          <div class="validation-layout">
+            <div>
+              <h4>Score tier outcomes</h4>
+              <div class="table-wrap"><table class="validation-table"><thead><tr><th>Tier</th><th>Stocks</th><th>3M</th><th>12M</th><th>3Y</th></tr></thead><tbody id="validationTierBody"></tbody></table></div>
+            </div>
+            <div>
+              <h4>Stock observations</h4>
+              <div class="table-wrap"><table class="validation-table"><thead><tr><th>Stock</th><th>Fit</th><th>3M</th><th>12M</th><th>3Y</th></tr></thead><tbody id="validationStockBody"></tbody></table></div>
+            </div>
+          </div>
+        </section>
+
         <section class="comparison-panel">
           <div class="panel-header compact">
             <div>
@@ -201,6 +286,90 @@
           </div>
         </section>
 
+        <section class="alerts-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Research Alerts</h3>
+              <p id="alertsStatus">Sign in to monitor price and Purchase Fit thresholds.</p>
+            </div>
+            <button class="secondary-button" id="refreshAlertsButton" type="button">Refresh alerts</button>
+          </div>
+          <form class="alert-form" id="alertForm">
+            <label>
+              <span>Ticker</span>
+              <input id="alertTicker" type="text" maxlength="8" placeholder="NVDA" required />
+            </label>
+            <label>
+              <span>Metric</span>
+              <select id="alertMetric">
+                <option value="price">Price</option>
+                <option value="purchaseScore">Purchase Fit</option>
+              </select>
+            </label>
+            <label>
+              <span>Condition</span>
+              <select id="alertOperator">
+                <option value="above">At or above</option>
+                <option value="below">At or below</option>
+              </select>
+            </label>
+            <label>
+              <span>Threshold</span>
+              <input id="alertThreshold" type="number" min="0" step="0.01" placeholder="150.00" required />
+            </label>
+            <button class="command-button" type="submit">Create alert</button>
+          </form>
+          <div class="table-wrap">
+            <table class="alerts-table">
+              <thead><tr><th>Stock</th><th>Rule</th><th>Current</th><th>Settings</th><th>Status</th><th aria-label="Remove alert"></th></tr></thead>
+              <tbody id="alertsBody"><tr><td colspan="6">Sign in to create alerts.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="portfolio-panel">
+          <div class="panel-header compact">
+            <div>
+              <h3>Portfolio Analysis</h3>
+              <p id="portfolioStatus">Sign in to save holdings and analyze allocation.</p>
+            </div>
+          </div>
+          <form class="holding-form" id="holdingForm">
+            <label>
+              <span>Ticker</span>
+              <input id="holdingTicker" type="text" maxlength="8" placeholder="NVDA" required />
+            </label>
+            <label>
+              <span>Shares</span>
+              <input id="holdingShares" type="number" min="0.0001" step="0.0001" placeholder="10" required />
+            </label>
+            <label>
+              <span>Average cost</span>
+              <input id="holdingCost" type="number" min="0" step="0.01" placeholder="100.00" required />
+            </label>
+            <button class="command-button" type="submit">Add or update</button>
+          </form>
+          <div class="portfolio-summary" id="portfolioSummary"></div>
+          <div class="allocation-list" id="sectorAllocation"></div>
+          <div class="table-wrap">
+            <table class="portfolio-table">
+              <thead>
+                <tr>
+                  <th>Holding</th>
+                  <th>Shares</th>
+                  <th>Price</th>
+                  <th>Value</th>
+                  <th>Allocation</th>
+                  <th>Gain/loss</th>
+                  <th>Risk</th>
+                  <th aria-label="Remove holding"></th>
+                </tr>
+              </thead>
+              <tbody id="portfolioBody"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="source-grid">
           <article>
             <h3>Company Context</h3>
@@ -215,7 +384,7 @@
         <section class="assistant-panel">
           <div class="panel-header compact">
             <h3>Ask the assistant</h3>
-            <span>Backend research chat</span>
+            <span>Source-grounded research chat</span>
           </div>
           <div class="chat-log" id="chatLog"></div>
           <form class="chat-form" id="chatForm">
@@ -235,6 +404,25 @@
       </section>
     </main>
 
-    <script src="app.js?v=20260613-purchase-fit-strict"></script>
+    <dialog class="auth-dialog" id="authDialog">
+      <form class="auth-form" id="authForm">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Saved research</p>
+            <h2 id="authTitle">Sign in</h2>
+          </div>
+          <button class="icon-button" id="closeAuthButton" type="button" title="Close" aria-label="Close">&times;</button>
+        </div>
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" required />
+        <label for="authPassword">Password</label>
+        <input id="authPassword" type="password" autocomplete="current-password" minlength="10" required />
+        <p class="form-status" id="authStatus"></p>
+        <button class="command-button" type="submit" id="authSubmitButton">Sign in</button>
+        <button class="text-button dialog-switch" type="button" id="authModeButton">Create an account</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="app.js?v=20260615-research-alerts"></script>
   </body>
 </html>
