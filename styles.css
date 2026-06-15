@@ -78,7 +78,7 @@ h1 {
 .brand-row p,
 .hint,
 .topbar .eyebrow,
-.assistant-panel span,
+.research-guide-panel span,
 .chart-panel span {
   color: var(--muted);
 }
@@ -441,7 +441,7 @@ input:disabled {
 .market-card,
 .metric-card,
 .insight-grid article,
-.assistant-panel,
+.research-guide-panel,
 .analysis-panel,
 .chart-panel {
   border: 1px solid var(--line);
@@ -487,7 +487,7 @@ input:disabled {
 
 .analysis-panel,
 .chart-panel,
-.assistant-panel,
+.research-guide-panel,
 .insight-grid article {
   padding: 20px;
 }
@@ -1234,87 +1234,63 @@ ul {
   line-height: 1.45;
 }
 
-.chat-log {
+.guide-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.guide-tab {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  padding: 8px 10px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.guide-tab.active {
+  border-color: var(--green);
+  background: #e9f4ed;
+  color: var(--green-strong);
+}
+
+.guide-output {
   display: grid;
-  gap: 10px;
-  max-height: 220px;
-  overflow: auto;
-  margin-bottom: 12px;
-  padding-right: 4px;
+  gap: 14px;
 }
 
-.message {
-  max-width: 88%;
-  border-radius: 8px;
-  padding: 10px 12px;
-  line-height: 1.45;
+.guide-section h4 {
+  margin: 0 0 7px;
+  font-size: 15px;
 }
 
-.cited-message {
-  display: grid;
-  gap: 9px;
-}
-
-.cited-message p {
+.guide-section p,
+.guide-output small {
+  color: #334139;
   line-height: 1.5;
 }
 
-.citation-markers {
-  display: inline-flex;
-  gap: 3px;
-  margin-left: 5px;
+.guide-section ul {
+  margin-top: 10px;
 }
 
-.citation-marker {
+.guide-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  font-size: 11px;
+}
+
+.guide-sources a {
   color: var(--blue);
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.chat-evidence {
-  border-top: 1px solid rgba(23, 33, 27, 0.12);
-  padding-top: 7px;
-}
-
-.chat-evidence summary {
-  color: var(--blue);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.chat-evidence div {
-  display: grid;
-  gap: 2px;
-  margin-top: 7px;
-}
-
-.chat-evidence a,
-.chat-evidence strong {
-  color: var(--ink);
-  font-size: 11px;
-}
-
-.chat-evidence span,
-.chat-caveat {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.chat-caveat {
-  display: block;
-  line-height: 1.4;
-}
-
-.message.user {
-  justify-self: end;
-  background: #e8f0f7;
-}
-
-.message.ai {
-  justify-self: start;
-  background: #eef6f1;
+  font-weight: 700;
 }
 
 @media (max-width: 1120px) {

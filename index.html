@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Stock Research Assistant</title>
+    <title>Stock Research Analyzer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,10 +16,10 @@
     <main class="app-shell">
       <aside class="sidebar" aria-label="Research controls">
         <div class="brand-row">
-          <div class="brand-mark" aria-hidden="true">AI</div>
+          <div class="brand-mark" aria-hidden="true">SR</div>
           <div>
-            <h1>Stock Research Assistant</h1>
-            <p>Fast equity briefs for conviction checks.</p>
+            <h1>Stock Research Analyzer</h1>
+            <p>Source-backed equity analysis without generated content.</p>
           </div>
         </div>
 
@@ -108,17 +108,17 @@
       <section class="workspace" aria-live="polite">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Research brief</p>
+            <p class="eyebrow">Research summary</p>
             <h2 id="companyName">NVIDIA Corporation</h2>
           </div>
           <div class="toolbar">
-            <button class="icon-button" id="copyButton" type="button" title="Copy brief" aria-label="Copy brief">
+            <button class="icon-button" id="copyButton" type="button" title="Copy summary" aria-label="Copy summary">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8 8h11v11H8z" />
                 <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
               </svg>
             </button>
-            <button class="icon-button" id="downloadButton" type="button" title="Download brief" aria-label="Download brief">
+            <button class="icon-button" id="downloadButton" type="button" title="Download summary" aria-label="Download summary">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 3v12" />
                 <path d="m7 10 5 5 5-5" />
@@ -134,7 +134,7 @@
           <article class="analysis-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">AI thesis</p>
+                <p class="eyebrow">Rules-based outlook</p>
                 <h3 id="verdictTitle">Constructive, but valuation-sensitive</h3>
               </div>
               <div class="score-pill" id="scorePill">82</div>
@@ -381,25 +381,21 @@
           </article>
         </section>
 
-        <section class="assistant-panel">
+        <section class="research-guide-panel">
           <div class="panel-header compact">
-            <h3>Ask the assistant</h3>
-            <span>Source-grounded research chat</span>
+            <div>
+              <h3>Research Guide</h3>
+              <span>Choose a structured view of the loaded company data.</span>
+            </div>
           </div>
-          <div class="chat-log" id="chatLog"></div>
-          <form class="chat-form" id="chatForm">
-            <input
-              id="questionInput"
-              type="text"
-              placeholder="Ask about margins, valuation, catalysts, or risk..."
-              autocomplete="off"
-            />
-            <button class="icon-button primary" type="submit" title="Ask" aria-label="Ask">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m5 12 14-8-4 16-3-7-7-1Z" />
-              </svg>
-            </button>
-          </form>
+          <div class="guide-tabs" id="guideTabs" role="tablist" aria-label="Research guide topics">
+            <button class="guide-tab active" type="button" data-topic="valuation">Valuation</button>
+            <button class="guide-tab" type="button" data-topic="risk">Risks</button>
+            <button class="guide-tab" type="button" data-topic="catalysts">Catalysts</button>
+            <button class="guide-tab" type="button" data-topic="profitability">Profitability</button>
+            <button class="guide-tab" type="button" data-topic="thesis">Thesis checks</button>
+          </div>
+          <div class="guide-output" id="guideOutput"></div>
         </section>
       </section>
     </main>
@@ -423,6 +419,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="app.js?v=20260615-research-alerts"></script>
+    <script type="module" src="app.js?v=20260615-token-free-research"></script>
   </body>
 </html>

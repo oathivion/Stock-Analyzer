@@ -10,7 +10,6 @@ import { analyzePortfolio } from "./portfolio.js";
 import { calculateFinancialMetrics } from "./financial-metrics.js";
 import { parseMarketCap, screenStocks } from "./screener.js";
 import { buildCatalysts, parseCsv } from "./catalysts.js";
-import { buildEvidenceCatalog, citedText, relevantEvidenceIds, validateGroundedAnswer } from "./grounding.js";
 import { createScoreSnapshot, evaluateSnapshots, summarizeForwardValidation, summarizeRetrospective, trailingReturns } from "./validation.js";
 import { alertLabel, createAlertRule, evaluateAlert } from "./alerts.js";
 
@@ -532,7 +531,7 @@ function fallbackStock(ticker) {
     context: {
       sector: "Unavailable",
       industry: "Unavailable",
-      description: "Live company profile data is unavailable. Configure provider keys to enrich this brief with source-backed fundamentals and news context.",
+      description: "Live company profile data is unavailable. Configure provider keys to enrich this summary with source-backed fundamentals and news context.",
       analystTargetPrice: "Unavailable",
       dividendYield: "Unavailable",
       fiftyTwoWeekHigh: "Unavailable",
@@ -563,6 +562,11 @@ function parseScaledFinancial(value) {
   return number * multiplier;
 }
 
+function missingData(value) {
+  if (value === null || value === undefined || value === "") return true;
+  return /^(unavailable|not reported|no consensus|not classified|unknown)$/i.test(String(value).trim());
+}
+
 function enrichCachedFinancialMetrics(stock) {
   const context = { ...(stock.context || {}) };
   const revenue = parseScaledFinancial(context.fiscalRevenue || stock.revenue);
@@ -572,10 +576,10 @@ function enrichCachedFinancialMetrics(stock) {
   const marketCap = parseScaledFinancial(stock.marketCap);
   const metrics = calculateFinancialMetrics({ revenue, netIncome, assets, equity });
 
-  if (!context.netMargin && metrics.netMargin !== null) context.netMargin = `${metrics.netMargin.toFixed(1)}%`;
-  if (!context.returnOnAssets && metrics.returnOnAssets !== null) context.returnOnAssets = `${metrics.returnOnAssets.toFixed(1)}%`;
-  if (!context.returnOnEquity && metrics.returnOnEquity !== null) context.returnOnEquity = `${metrics.returnOnEquity.toFixed(1)}%`;
-  if (!context.priceToSales && marketCap !== null && revenue) context.priceToSales = (marketCap / revenue).toFixed(2);
+  if (missingData(context.netMargin) && metrics.netMargin !== null) context.netMargin = `${metrics.netMargin.toFixed(1)}%`;
+  if (missingData(context.returnOnAssets) && metrics.returnOnAssets !== null) context.returnOnAssets = `${metrics.returnOnAssets.toFixed(1)}%`;
+  if (missingData(context.returnOnEquity) && metrics.returnOnEquity !== null) context.returnOnEquity = `${metrics.returnOnEquity.toFixed(1)}%`;
+  if (missingData(context.priceToSales) && marketCap !== null && revenue) context.priceToSales = (marketCap / revenue).toFixed(2);
   return { ...stock, context };
 }
 
@@ -606,10 +610,6 @@ function generatePath(stock, score) {
   }
 
   return series;
-}
-
-function extractOutputText(data) {
-  return data.output_text || data.output?.flatMap((item) => item.content || []).find((item) => item.type === "output_text")?.text;
 }
 
 function dedupeSources(sources = []) {
@@ -1425,7 +1425,7 @@ function formatNewsDate(value) {
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
-function localResearch({ stock, lens, horizon, risk }) {
+function buildResearchSummary({ stock, lens, horizon, risk }) {
   const score = scoreFor(stock, lens, risk);
   return {
     ...stock,
@@ -1434,206 +1434,10 @@ function localResearch({ stock, lens, horizon, risk }) {
     horizon,
     lens,
     chart: generatePath(stock, score),
-    generatedBy: "local",
+    generatedBy: "rules",
     sources: stock.sources || [],
     context: stock.context || {}
   };
-}
-
-async function aiResearch(input) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return null;
-
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-  const prompt = `Create an equity research brief as strict JSON with keys verdict, thesis, drivers, risks, checks, score.
-
-Ticker: ${input.stock.ticker}
-Company: ${input.stock.name}
-Price: ${input.stock.price}
-Market cap: ${input.stock.marketCap}
-Forward P/E: ${input.stock.pe}
-Revenue growth: ${input.stock.revenue}
-Margin: ${input.stock.margin}
-Sector: ${input.stock.context?.sector || "Unavailable"}
-Industry: ${input.stock.context?.industry || "Unavailable"}
-Company description: ${input.stock.context?.description || "Unavailable"}
-Analyst target price: ${input.stock.context?.analystTargetPrice || "Unavailable"}
-52-week range: ${input.stock.context?.fiftyTwoWeekLow || "Unavailable"} to ${input.stock.context?.fiftyTwoWeekHigh || "Unavailable"}
-Free cash flow: ${input.stock.context?.freeCashFlow || "Unavailable"}
-Free cash flow margin: ${input.stock.context?.freeCashFlowMargin || "Unavailable"}
-Net margin: ${input.stock.context?.netMargin || input.stock.context?.providerProfitMargin || "Unavailable"}
-Return on equity: ${input.stock.context?.returnOnEquity || input.stock.context?.providerReturnOnEquity || "Unavailable"}
-Total debt: ${input.stock.context?.totalDebt || "Unavailable"}
-Net debt: ${input.stock.context?.netDebt || "Unavailable"}
-Debt to equity: ${input.stock.context?.debtToEquity || "Unavailable"}
-Annual diluted share change: ${input.stock.context?.shareChange || "Unavailable"}
-Latest EPS surprise: ${input.stock.context?.earningsSurprisePercent ?? "Unavailable"}%
-Recent news context: ${JSON.stringify(input.stock.context?.latestNews || [])}
-Lens: ${input.lens}
-Horizon: ${input.horizon}
-Risk tolerance: ${input.risk}/5
-
-Rules:
-- score must be an integer from 25 to 95.
-- drivers, risks, and checks must each contain exactly 3 concise strings.
-- Do not make up live news. Base the brief only on the provided metrics, company context, and listed news context.`;
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`
-    },
-    body: JSON.stringify({
-      model,
-      input: prompt,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "stock_research_brief",
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            required: ["verdict", "thesis", "drivers", "risks", "checks", "score"],
-            properties: {
-              verdict: { type: "string" },
-              thesis: { type: "string" },
-              drivers: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
-              risks: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
-              checks: { type: "array", minItems: 3, maxItems: 3, items: { type: "string" } },
-              score: { type: "integer", minimum: 25, maximum: 95 }
-            }
-          }
-        }
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`OpenAI returned ${response.status}: ${detail}`);
-  }
-
-  const data = await response.json();
-  const text = extractOutputText(data);
-  if (!text) return null;
-
-  const brief = JSON.parse(text);
-  return {
-    ...input.stock,
-    ...brief,
-    score: Number(brief.score),
-    purchaseFit: purchaseFitFor(input.stock, Number(brief.score), input.risk, input.horizon),
-    lens: input.lens,
-    horizon: input.horizon,
-    chart: generatePath(input.stock, Number(brief.score)),
-    generatedBy: "openai",
-    sources: input.stock.sources || [],
-    context: input.stock.context || {}
-  };
-}
-
-function localChat({ question, brief, evidence }) {
-  const q = String(question || "").toLowerCase();
-  const clean = (value) => String(value || "").replace(/[.!?]+$/, "");
-  const sourceIds = relevantEvidenceIds(question, evidence);
-  let text;
-
-  if (q.includes("valuation") || q.includes("multiple") || q.includes("pe")) {
-    text = `${brief.ticker} has a forward P/E marker of ${brief.pe}. With a research score of ${brief.score}, compare earnings growth, free cash flow conversion, and margin durability against that valuation.`;
-  } else if (q.includes("risk") || q.includes("bear")) {
-    text = `The main bear case is ${clean(brief.risks?.[0] || "execution or demand weakens")}. A second issue to monitor is ${clean(brief.risks?.[1] || "valuation sensitivity")}.`;
-  } else if (q.includes("catalyst") || q.includes("driver")) {
-    text = `The clearest driver is ${clean(brief.drivers?.[0] || "continued execution against growth expectations")}. Also monitor ${clean(brief.drivers?.[1] || "margin performance")}.`;
-  } else if (q.includes("margin") || q.includes("profit")) {
-    text = `${brief.name}'s reported margin marker is ${brief.margin}. The key question is whether revenue growth produces operating leverage or is absorbed by reinvestment, pricing pressure, or competition.`;
-  } else if (q.includes("what would change") || q.includes("change the thesis")) {
-    text = `The thesis should change if these checks begin failing: ${brief.checks?.slice(0, 2).map(clean).join(". ")}. The score should decline if they weaken and improve only when execution strengthens without valuation becoming less attractive.`;
-  } else {
-    text = `The current research thesis for ${brief.ticker} is: ${brief.thesis}`;
-  }
-  return validateGroundedAnswer({ claims: [{ text, sourceIds }], caveat: "Research support only; verify material decisions against the linked primary sources." }, evidence);
-}
-
-async function aiChat(input) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return null;
-
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-  const prompt = `You are an equity research assistant. Answer the user's question using only the evidence and brief below.
-
-Rules:
-- Be concise and practical.
-- Do not provide personalized financial advice.
-- Do not claim access to live news, filings, or prices beyond the provided context.
-- If the user asks for a buy/sell decision, frame decision criteria instead.
-- Return 1 to 3 claims. Every claim must cite one or more source IDs from the evidence catalog.
-- Never invent a source ID. If the evidence is insufficient, state that in the caveat and omit the unsupported claim.
-
-Evidence catalog:
-${JSON.stringify(input.evidence, null, 2)}
-
-Brief:
-${JSON.stringify(input.brief, null, 2)}
-
-User question:
-${input.question}`;
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`
-    },
-    body: JSON.stringify({
-      model,
-      input: prompt,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "grounded_stock_answer",
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            required: ["claims", "caveat"],
-            properties: {
-              claims: {
-                type: "array",
-                minItems: 1,
-                maxItems: 3,
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["text", "sourceIds"],
-                  properties: {
-                    text: { type: "string" },
-                    sourceIds: { type: "array", minItems: 1, maxItems: 4, items: { type: "string" } }
-                  }
-                }
-              },
-              caveat: { type: "string" }
-            }
-          }
-        },
-        verbosity: "low"
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`OpenAI returned ${response.status}: ${detail}`);
-  }
-
-  const data = await response.json();
-  const text = extractOutputText(data);
-  if (!text) return null;
-  try {
-    const grounded = validateGroundedAnswer(JSON.parse(text), input.evidence);
-    return grounded.grounded ? grounded : null;
-  } catch {
-    return null;
-  }
 }
 
 async function handleQuote(req, res, ticker) {
@@ -1871,7 +1675,7 @@ async function handlePriceHistory(req, res, ticker) {
   }
 }
 
-async function handleResearch(req, res) {
+async function handleSummary(req, res) {
   try {
     const body = await readBody(req);
     const controls = researchControls(body);
@@ -1884,61 +1688,9 @@ async function handleResearch(req, res) {
       horizon: controls.horizon,
       risk: controls.risk
     };
-    const brief = (await aiResearch(input)) || localResearch(input);
+    const summary = buildResearchSummary(input);
     await captureScoreSnapshot(stock);
-    json(res, 200, { brief: { ...brief, warnings } });
-  } catch (error) {
-    sendError(res, error);
-  }
-}
-
-async function handleChat(req, res) {
-  try {
-    const body = await readBody(req);
-    const question = String(body.question || "").trim();
-    const ticker = requireTicker(body.ticker || body.brief?.ticker);
-    const trustedStock = enrichCachedFinancialMetrics(fallbackStock(ticker));
-    const submitted = body.brief || {};
-    const brief = {
-      ...submitted,
-      ...trustedStock,
-      ticker,
-      score: Number(submitted.score || trustedStock.score || 65),
-      thesis: submitted.thesis || trustedStock.thesis,
-      drivers: Array.isArray(submitted.drivers) ? submitted.drivers.slice(0, 3) : trustedStock.drivers,
-      risks: Array.isArray(submitted.risks) ? submitted.risks.slice(0, 3) : trustedStock.risks,
-      checks: Array.isArray(submitted.checks) ? submitted.checks.slice(0, 3) : trustedStock.checks,
-      sources: trustedStock.sources || [],
-      context: trustedStock.context || {}
-    };
-
-    if (!question) {
-      json(res, 400, { error: "Question is required." });
-      return;
-    }
-    if (question.length > 500) throw new HttpError(400, "Question must be 500 characters or fewer.");
-
-    const evidence = buildEvidenceCatalog(brief);
-    let groundedAnswer = null;
-    let generatedBy = "local";
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        groundedAnswer = await aiChat({ question, brief, evidence });
-        if (groundedAnswer) generatedBy = "openai";
-      } catch {
-        groundedAnswer = null;
-      }
-    }
-    groundedAnswer ||= localChat({ question, brief, evidence });
-    const citedSources = evidence.filter((source) => groundedAnswer.claims.some((claim) => claim.sourceIds.includes(source.id)));
-    json(res, 200, {
-      answer: citedText(groundedAnswer.claims),
-      claims: groundedAnswer.claims,
-      citations: citedSources,
-      caveat: groundedAnswer.caveat,
-      grounded: groundedAnswer.grounded,
-      generatedBy
-    });
+    json(res, 200, { summary: { ...summary, warnings } });
   } catch (error) {
     sendError(res, error);
   }
@@ -2188,7 +1940,7 @@ export const server = createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/health") {
     json(res, 200, {
       status: "ok",
-      service: "ai-stock-research-assistant",
+      service: "stock-research-analyzer",
       storage: storage.status(),
       timestamp: new Date().toISOString()
     });
@@ -2279,13 +2031,8 @@ export const server = createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "POST" && url.pathname === "/api/research") {
-    await handleResearch(req, res);
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/chat") {
-    await handleChat(req, res);
+  if (req.method === "POST" && url.pathname === "/api/summary") {
+    await handleSummary(req, res);
     return;
   }
 
@@ -2303,5 +2050,5 @@ export const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`AI Stock Research Assistant running at http://localhost:${port} with ${storageStartup.backend} storage`);
+  console.log(`Stock Research Analyzer running at http://localhost:${port} with ${storageStartup.backend} storage`);
 });

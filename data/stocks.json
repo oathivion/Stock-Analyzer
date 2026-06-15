@@ -2,9 +2,9 @@
   "NVDA": {
     "ticker": "NVDA",
     "name": "NVIDIA Corporation",
-    "price": 205.19,
-    "change": 0.16,
-    "marketCap": "$5.0T",
+    "price": 212.45,
+    "change": 3.54,
+    "marketCap": "$5.1T",
     "pe": "38.7",
     "revenue": "$216B",
     "margin": "+71.1%",
@@ -31,43 +31,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/NVDA/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/NVDA/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/NVDA/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/NVDA/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:02.144Z"
       }
     ],
     "context": {
@@ -106,19 +113,91 @@
       "operatingIncome": "$130B",
       "dilutedEps": 4.9,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "159,779,029"
+      "averageVolume": "158,718,580",
+      "capitalExpenditures": "$139M",
+      "freeCashFlow": "$103B",
+      "freeCashFlowMargin": "+47.5%",
+      "netMargin": "+55.6%",
+      "returnOnAssets": "46.3%",
+      "returnOnEquity": "61.4%",
+      "totalDebt": "$8B",
+      "cashAndEquivalents": "$13B",
+      "netDebt": "-$5B",
+      "debtToEquity": "0.00",
+      "dilutedShares": "24.51B",
+      "shareChangePercent": -1.2,
+      "shareChange": "-1.2%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "23.61"
     },
-    "refreshedAt": "2026-06-13T17:59:35.215Z",
+    "refreshedAt": "2026-06-15T20:18:02.145Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:00.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:00.000Z",
+    "catalysts": [
+      {
+        "type": "dividend",
+        "title": "Dividend payment date",
+        "date": "2026-06-26",
+        "detail": "Scheduled dividend payment date.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": 11,
+        "timing": "upcoming"
+      },
+      {
+        "type": "dividend",
+        "title": "Ex-dividend date",
+        "date": "2026-06-04",
+        "detail": "Annualized dividend $1; yield 0.49%.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": -11,
+        "timing": "recent"
+      },
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-02-25",
+        "detail": "Latest reported fiscal period: 2026 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -110,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $311.41; range $250.00 to $500.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Track data center sequential growth and backlog commentary.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "AAPL": {
     "ticker": "AAPL",
     "name": "Apple Inc.",
-    "price": 291.13,
-    "change": -1.52,
-    "marketCap": "$4.3T",
+    "price": 296.42,
+    "change": 1.82,
+    "marketCap": "$4.4T",
     "pe": "29.4",
     "revenue": "$416B",
     "margin": "+46.9%",
@@ -145,43 +224,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/AAPL/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/AAPL/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AAPL/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AAPL/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:02.885Z"
       }
     ],
     "context": {
@@ -220,19 +306,91 @@
       "operatingIncome": "$133B",
       "dilutedEps": 7.46,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "47,313,400"
+      "averageVolume": "47,266,122",
+      "capitalExpenditures": "$13B",
+      "freeCashFlow": "$99B",
+      "freeCashFlowMargin": "+23.7%",
+      "netMargin": "+26.9%",
+      "returnOnAssets": "30.2%",
+      "returnOnEquity": "105.2%",
+      "totalDebt": "$83B",
+      "cashAndEquivalents": "$46B",
+      "netDebt": "$37B",
+      "debtToEquity": "0.80",
+      "dilutedShares": "15.00B",
+      "shareChangePercent": -2.6,
+      "shareChange": "-2.6%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "10.58"
     },
-    "refreshedAt": "2026-06-13T17:59:35.711Z",
+    "refreshedAt": "2026-06-15T20:18:02.886Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:01.000Z",
+    "catalysts": [
+      {
+        "type": "dividend",
+        "title": "Dividend payment date",
+        "date": "2026-05-14",
+        "detail": "Scheduled dividend payment date.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": -32,
+        "timing": "recent"
+      },
+      {
+        "type": "dividend",
+        "title": "Ex-dividend date",
+        "date": "2026-05-11",
+        "detail": "Annualized dividend $1.08; yield 0.37%.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": -35,
+        "timing": "recent"
+      },
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2025-10-31",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -227,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $324.78; range $250.00 to $400.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Follow iPhone unit demand by region, especially China.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "MSFT": {
     "ticker": "MSFT",
     "name": "Microsoft Corporation",
-    "price": 390.74,
-    "change": 0.1,
-    "marketCap": "$2.9T",
+    "price": 399.76,
+    "change": 2.31,
+    "marketCap": "$3.0T",
     "pe": "34.2",
     "revenue": "$282B",
     "margin": "+68.8%",
@@ -259,43 +417,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/MSFT?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/MSFT/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/MSFT/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/MSFT/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:03.595Z"
       }
     ],
     "context": {
@@ -334,18 +499,90 @@
       "operatingIncome": "$129B",
       "dilutedEps": 13.64,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "34,711,072"
+      "averageVolume": "34,822,381",
+      "capitalExpenditures": "$65B",
+      "freeCashFlow": "$72B",
+      "freeCashFlowMargin": "+25.4%",
+      "netMargin": "+36.1%",
+      "returnOnAssets": "14.7%",
+      "returnOnEquity": "24.6%",
+      "totalDebt": "$40B",
+      "cashAndEquivalents": "$32B",
+      "netDebt": "$8B",
+      "debtToEquity": "0.10",
+      "dilutedShares": "7.46B",
+      "shareChangePercent": -0.1,
+      "shareChange": "-0.1%",
+      "dilutionLabel": "Stable",
+      "priceToSales": "10.64"
     },
-    "refreshedAt": "2026-06-13T17:59:36.263Z",
+    "refreshedAt": "2026-06-15T20:18:03.596Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:01.000Z",
+    "catalysts": [
+      {
+        "type": "dividend",
+        "title": "Dividend payment date",
+        "date": "2026-06-11",
+        "detail": "Scheduled dividend payment date.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": -4,
+        "timing": "recent"
+      },
+      {
+        "type": "dividend",
+        "title": "Ex-dividend date",
+        "date": "2026-05-21",
+        "detail": "Annualized dividend $3.64; yield 0.93%.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": -25,
+        "timing": "recent"
+      },
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2025-07-30",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -320,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $557.64; range $400.00 to $680.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Separate Azure growth from reported cloud growth.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "TSLA": {
     "ticker": "TSLA",
     "name": "Tesla, Inc. ",
-    "price": 406.43,
-    "change": 1.82,
+    "price": 411.15,
+    "change": 1.16,
     "marketCap": "$1.5T",
     "pe": "58.1",
     "revenue": "$95B",
@@ -373,43 +610,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001318605.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/TSLA/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/TSLA/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/TSLA/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/TSLA/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:04.102Z"
       }
     ],
     "context": {
@@ -448,18 +692,68 @@
       "operatingIncome": "$4B",
       "dilutedEps": 1.08,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "57,596,978"
+      "averageVolume": "57,696,905",
+      "capitalExpenditures": "$9B",
+      "freeCashFlow": "$6B",
+      "freeCashFlowMargin": "+6.6%",
+      "netMargin": "+4.0%",
+      "returnOnAssets": "2.6%",
+      "returnOnEquity": "4.5%",
+      "totalDebt": "$648M",
+      "cashAndEquivalents": "$17B",
+      "netDebt": "-$16B",
+      "debtToEquity": "0.00",
+      "dilutedShares": "3.53B",
+      "shareChangePercent": 0.9,
+      "shareChange": "+0.9%",
+      "dilutionLabel": "Stable",
+      "priceToSales": "15.79"
     },
-    "refreshedAt": "2026-06-13T17:59:37.097Z",
+    "refreshedAt": "2026-06-15T20:18:04.102Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:00.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:00.000Z",
+    "catalysts": [
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-01-29",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -137,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $404.54; range $24.86 to $600.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Track automotive gross margin excluding credits.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "AMZN": {
     "ticker": "AMZN",
     "name": "Amazon.com, Inc.",
-    "price": 238.55,
-    "change": -1.23,
+    "price": 246.02,
+    "change": 3.13,
     "marketCap": "$2.6T",
     "pe": "41.5",
     "revenue": "$717B",
@@ -487,43 +781,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMZN?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/AMZN/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/AMZN/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AMZN/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/AMZN/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:04.834Z"
       }
     ],
     "context": {
@@ -562,19 +863,69 @@
       "operatingIncome": "$80B",
       "dilutedEps": 7.17,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "43,729,918"
+      "averageVolume": "43,828,879",
+      "capitalExpenditures": "$7B",
+      "freeCashFlow": "$133B",
+      "freeCashFlowMargin": "+18.5%",
+      "netMargin": "+10.8%",
+      "returnOnAssets": "8.5%",
+      "returnOnEquity": "17.6%",
+      "totalDebt": "$122B",
+      "cashAndEquivalents": "$102B",
+      "netDebt": "$20B",
+      "debtToEquity": "0.30",
+      "dilutedShares": "10.83B",
+      "shareChangePercent": 1,
+      "shareChange": "+1.0%",
+      "dilutionLabel": "Stable",
+      "priceToSales": "3.63"
     },
-    "refreshedAt": "2026-06-13T17:59:37.754Z",
+    "refreshedAt": "2026-06-15T20:18:04.834Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:00.000Z",
+    "catalysts": [
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-02-06",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -129,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $319.14; range $250.00 to $370.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Compare AWS growth to peers each quarter.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "META": {
     "ticker": "META",
     "name": "Meta Platforms, Inc.",
-    "price": 566.98,
-    "change": -0.26,
-    "marketCap": "$1.4T",
+    "price": 593.48,
+    "change": 4.67,
+    "marketCap": "$1.5T",
     "pe": "25.8",
     "revenue": "$201B",
     "margin": "+41.4%",
@@ -601,43 +952,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/META?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/META/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/META/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/META/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/META/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:06.395Z"
       }
     ],
     "context": {
@@ -668,27 +1026,99 @@
       "analystHoldRatings": 6,
       "analystSellRatings": 0,
       "annualDividend": "$2.1",
-      "exDividendDate": "03/16/2026",
-      "dividendPaymentDate": "03/26/2026",
+      "exDividendDate": "06/15/2026",
+      "dividendPaymentDate": "06/25/2026",
       "priorFiscalRevenue": "$165B",
       "revenueGrowthPercent": 22.2,
       "revenueGrowth": "+22.2%",
       "operatingIncome": "$83B",
       "dilutedEps": 23.49,
       "exchange": "NASDAQ-GS",
-      "averageVolume": "16,488,067"
+      "averageVolume": "16,304,077",
+      "capitalExpenditures": "$70B",
+      "freeCashFlow": "$46B",
+      "freeCashFlowMargin": "+22.9%",
+      "netMargin": "+30.1%",
+      "returnOnAssets": "15.3%",
+      "returnOnEquity": "24.8%",
+      "totalDebt": "$59B",
+      "cashAndEquivalents": "$23B",
+      "netDebt": "$35B",
+      "debtToEquity": "0.20",
+      "dilutedShares": "2.57B",
+      "shareChangePercent": -1.5,
+      "shareChange": "-1.5%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "7.46"
     },
-    "refreshedAt": "2026-06-13T17:59:38.324Z",
+    "refreshedAt": "2026-06-15T20:18:06.396Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:01.000Z",
+    "catalysts": [
+      {
+        "type": "dividend",
+        "title": "Ex-dividend date",
+        "date": "2026-06-15",
+        "detail": "Annualized dividend $2.1; yield 0.37%.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": 0,
+        "timing": "upcoming"
+      },
+      {
+        "type": "dividend",
+        "title": "Dividend payment date",
+        "date": "2026-06-25",
+        "detail": "Scheduled dividend payment date.",
+        "source": "Nasdaq",
+        "confidence": "scheduled",
+        "url": null,
+        "daysAway": 10,
+        "timing": "upcoming"
+      },
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-01-29",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -137,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $819.73; range $622.25 to $1015.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Track capex guidance and operating expense discipline.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "JPM": {
     "ticker": "JPM",
     "name": "J P Morgan Chase & Co",
-    "price": 320.72,
-    "change": 2.31,
-    "marketCap": "$859B",
+    "price": 319.4,
+    "change": -0.41,
+    "marketCap": "$857B",
     "pe": "12.1",
     "revenue": "$182B",
     "margin": "32%",
@@ -715,43 +1145,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000019617.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/JPM?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/JPM/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/JPM/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/JPM/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/JPM/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:07.714Z"
       }
     ],
     "context": {
@@ -790,19 +1227,69 @@
       "operatingIncome": "$0",
       "dilutedEps": 20.02,
       "exchange": "NYSE",
-      "averageVolume": "19,163,627"
+      "averageVolume": "19,163,627",
+      "capitalExpenditures": "Unavailable",
+      "freeCashFlow": "-$148B",
+      "freeCashFlowMargin": "-81.0%",
+      "netMargin": "+31.3%",
+      "returnOnAssets": "1.2%",
+      "returnOnEquity": "15.7%",
+      "totalDebt": "$270B",
+      "cashAndEquivalents": "$279B",
+      "netDebt": "-$9B",
+      "debtToEquity": "0.70",
+      "dilutedShares": "2.78B",
+      "shareChangePercent": -3.4,
+      "shareChange": "-3.4%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "4.71"
     },
-    "refreshedAt": "2026-06-13T17:59:40.154Z",
+    "refreshedAt": "2026-06-15T20:18:07.715Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:02.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:00:02.000Z",
+    "catalysts": [
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-02-13",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -122,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $336.50; range $288.00 to $391.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Watch net interest income guidance and deposit trends.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "DIS": {
     "ticker": "DIS",
     "name": "Walt Disney Company (The)",
-    "price": 100.04,
-    "change": -0.3,
-    "marketCap": "$174B",
+    "price": 101.69,
+    "change": 1.65,
+    "marketCap": "$177B",
     "pe": "20.3",
     "revenue": "$94B",
     "margin": "+18.6%",
@@ -829,43 +1316,50 @@
       {
         "title": "Built-in demo company profile",
         "provider": "Demo data",
-        "detail": "Used when live provider keys are not configured or provider data is unavailable."
+        "detail": "Used when live provider keys are not configured or provider data is unavailable.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001744489.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/DIS?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/DIS/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/DIS/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/DIS/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/DIS/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:18:08.387Z"
       }
     ],
     "context": {
@@ -904,11 +1398,61 @@
       "operatingIncome": "$18B",
       "dilutedEps": 6.85,
       "exchange": "NYSE",
-      "averageVolume": "11,425,926"
+      "averageVolume": "11,425,926",
+      "capitalExpenditures": "$8B",
+      "freeCashFlow": "$10B",
+      "freeCashFlowMargin": "+10.7%",
+      "netMargin": "+13.1%",
+      "returnOnAssets": "6.0%",
+      "returnOnEquity": "11.4%",
+      "totalDebt": "$47B",
+      "cashAndEquivalents": "$6B",
+      "netDebt": "$42B",
+      "debtToEquity": "0.40",
+      "dilutedShares": "1.81B",
+      "shareChangePercent": -1.1,
+      "shareChange": "-1.1%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "1.88"
     },
-    "refreshedAt": "2026-06-13T17:59:41.543Z",
+    "refreshedAt": "2026-06-15T20:18:08.387Z",
     "warnings": [],
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:02:49.000Z"
+    "quoteUpdatedAt": "2026-06-15T20:02:49.000Z",
+    "catalysts": [
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2025-11-13",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -214,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $132.47; range $119.00 to $164.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Track streaming operating income and subscriber quality.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   }
 }

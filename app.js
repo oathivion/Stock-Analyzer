@@ -59,9 +59,8 @@ const contextList = document.querySelector("#contextList");
 const sourcesList = document.querySelector("#sourcesList");
 const chart = document.querySelector("#priceChart");
 const chartLabel = document.querySelector("#chartLabel");
-const chatLog = document.querySelector("#chatLog");
-const chatForm = document.querySelector("#chatForm");
-const questionInput = document.querySelector("#questionInput");
+const guideTabs = document.querySelector("#guideTabs");
+const guideOutput = document.querySelector("#guideOutput");
 const copyButton = document.querySelector("#copyButton");
 const downloadButton = document.querySelector("#downloadButton");
 const refreshButton = document.querySelector("#refreshButton");
@@ -121,33 +120,33 @@ function fallbackBrief(ticker) {
     name: ticker,
     price: 0,
     change: 0,
-    marketCap: "Not reported",
-    pe: "Not reported",
-    revenue: "Not reported",
-    margin: "Not reported"
+    marketCap: null,
+    pe: null,
+    revenue: null,
+    margin: null
   };
   return {
     ticker,
     ...stock,
     score: 68,
-    verdict: "Demo brief ready",
+    verdict: "Demo summary ready",
     thesis:
-      "The backend is reachable when served through Node. This fallback brief keeps the interface usable if the server is offline or a research request fails.",
+      "This fallback summary keeps the interface usable if the server is offline or a market-data request fails.",
     drivers: ["Durable business quality is the first item to validate.", "Revenue growth should be compared against valuation.", "Cash conversion matters more as the holding period lengthens."],
     risks: ["Live API data may be unavailable without configured keys.", "Valuation can compress if growth expectations cool.", "Company-specific risks need source-backed research before investing."],
-    checks: ["Start the Node server for API-backed briefs.", "Add API keys in the environment for live quote and AI generation.", "Verify the latest filings and earnings transcript before making decisions."],
+    checks: ["Start the Node server for source-backed summaries.", "Configure a market-data key for broader live quote coverage.", "Verify the latest filings and earnings transcript before making decisions."],
     chart: generateLocalPath(stock.price, 68),
-    generatedBy: "browser fallback",
+    generatedBy: "rules",
     source: "demo",
     quoteSource: "Browser fallback",
-    quoteUpdatedAt: "Unavailable",
+    quoteUpdatedAt: null,
     context: {
-      sector: "Unavailable",
-      industry: "Unavailable",
-      analystTargetPrice: "Unavailable",
-      dividendYield: "Unavailable",
-      fiftyTwoWeekHigh: "Unavailable",
-      fiftyTwoWeekLow: "Unavailable",
+      sector: null,
+      industry: null,
+      analystTargetPrice: null,
+      dividendYield: null,
+      fiftyTwoWeekHigh: null,
+      fiftyTwoWeekLow: null,
       description: "Run the Node backend to enrich this symbol with source-backed fundamentals and market data."
     },
     sources: [
@@ -161,7 +160,7 @@ function fallbackBrief(ticker) {
 }
 
 function formatClock(value) {
-  if (!value || value === "Unavailable") return "Unavailable";
+  if (!value || value === "Unavailable") return "Pending first update";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
@@ -202,24 +201,24 @@ async function requestResearch() {
         chart: generateLocalPath(stock.price, stock.score || 65)
       });
       requestPriceHistory(stock.ticker, controls.horizon);
-      verdictTitle.textContent = "Generating research brief...";
+      verdictTitle.textContent = "Calculating research summary...";
     }
 
-    const response = await fetch("/api/research", {
+    const response = await fetch("/api/summary", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(controls)
     });
 
-    if (!response.ok) throw new Error(`Research request failed with ${response.status}.`);
+    if (!response.ok) throw new Error(`Summary request failed with ${response.status}.`);
     const data = await response.json();
-    if (!data.brief) throw new Error("Research response was empty.");
+    if (!data.summary) throw new Error("Research summary was empty.");
     if (requestId !== currentRequest) return;
 
-    activeTicker = data.brief.ticker;
+    activeTicker = data.summary.ticker;
     tickerInput.value = activeTicker;
-    render(data.brief);
-    requestPriceHistory(data.brief.ticker, controls.horizon);
+    render(data.summary);
+    requestPriceHistory(data.summary.ticker, controls.horizon);
   } catch (error) {
     if (requestId !== currentRequest) return;
     const brief = fallbackBrief(controls.ticker);
@@ -238,7 +237,7 @@ function setLoading(isLoading) {
   downloadButton.disabled = isLoading;
   if (isLoading && coreWatchlist.includes(getControls().ticker)) {
     verdictTitle.textContent = "Researching...";
-    thesisText.textContent = "Gathering quote data, applying your research lens, and drafting the brief.";
+    thesisText.textContent = "Gathering quote data and applying the selected scoring rules.";
   }
 }
 
@@ -288,7 +287,7 @@ function setAlertsEnabled(enabled) {
 }
 
 function alertValue(rule) {
-  if (!Number.isFinite(rule.currentValue)) return "Unavailable";
+  if (!Number.isFinite(rule.currentValue)) return "Waiting for quote";
   return rule.metric === "price" ? money(rule.currentValue) : `${rule.currentValue} / 100`;
 }
 
@@ -678,13 +677,13 @@ function renderValidation(data) {
   const forward = data.forward;
   const correlations = retrospective.summary.correlations;
   const matured = Object.values(forward.summary).reduce((sum, item) => sum + item.observations, 0);
-  validationSummary.innerHTML = [
+  validationSummary.innerHTML = displayEntries([
     ["Historical sample", retrospective.summary.sampleSize, "stocks"],
-    ["3M correlation", correlations.threeMonth ?? "--", correlationLabel(correlations.threeMonth)],
-    ["12M correlation", correlations.twelveMonth ?? "--", correlationLabel(correlations.twelveMonth)],
+    ["3M correlation", correlations.threeMonth, correlationLabel(correlations.threeMonth)],
+    ["12M correlation", correlations.twelveMonth, correlationLabel(correlations.twelveMonth)],
     ["Forward snapshots", forward.snapshotCount, "captured observations"],
     ["Matured outcomes", matured, "across 3M, 6M, and 12M"]
-  ].map(([label, value, detail]) => `<div class="validation-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join("");
+  ]).map(([label, value, detail]) => `<div class="validation-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join("");
   validationNotice.textContent = `${retrospective.limitation} ${forward.limitation}`;
   validationTierBody.innerHTML = retrospective.summary.tiers.map((tier) => `
     <tr><td>${escapeHtml(tier.label)}</td><td>${tier.count}</td><td>${percentValue(tier.threeMonth)}</td><td>${percentValue(tier.twelveMonth)}</td><td>${percentValue(tier.threeYear)}</td></tr>
@@ -733,32 +732,46 @@ function renderList(target, items) {
   });
 }
 
+function hasDisplayValue(value) {
+  if (value === null || value === undefined || value === "") return false;
+  if (typeof value === "number") return Number.isFinite(value);
+  const text = String(value).trim();
+  if (!text || /^(unavailable|not reported|no consensus|not classified|unknown|n\/a|--|nan)$/i.test(text)) return false;
+  return !/\b(unavailable|not reported)\b/i.test(text);
+}
+
+function displayEntries(entries) {
+  return entries.filter(([, value]) => hasDisplayValue(value));
+}
+
 function renderMarketStrip(brief) {
-  const sourceLabel = brief.quoteSource || (brief.generatedBy === "openai" ? "OpenAI brief" : `${brief.source || "demo"} data`);
-  const values = [
-    ["Last price", `$${Number(brief.price).toFixed(2)}`],
-    ["Today", `${brief.change >= 0 ? "+" : ""}${brief.change}%`, brief.change >= 0 ? "gain" : "loss"],
+  const sourceLabel = brief.quoteSource || `${brief.source || "demo"} data`;
+  const price = Number(brief.price);
+  const change = Number(brief.change);
+  const values = displayEntries([
+    ["Last price", Number.isFinite(price) && price > 0 ? `$${price.toFixed(2)}` : null],
+    ["Today", Number.isFinite(change) && price > 0 ? `${change >= 0 ? "+" : ""}${change}%` : null, change >= 0 ? "gain" : "loss"],
     ["Market cap", brief.marketCap],
     ["Quote source", sourceLabel],
-    ["Quote time", formatClock(brief.quoteUpdatedAt)]
-  ];
+    ["Quote time", hasDisplayValue(brief.quoteUpdatedAt) ? formatClock(brief.quoteUpdatedAt) : null]
+  ]);
 
   marketStrip.innerHTML = values
-    .map(([label, value, className]) => `<div class="market-card"><span>${label}</span><strong class="${className || ""}">${value}</strong></div>`)
+    .map(([label, value, className]) => `<div class="market-card"><span>${escapeHtml(label)}</span><strong class="${className || ""}">${escapeHtml(value)}</strong></div>`)
     .join("");
 }
 
 function renderMetrics(brief) {
-  const values = [
+  const values = displayEntries([
     ["Revenue", brief.revenue],
-    ["Revenue growth", brief.context?.revenueGrowth || "Not reported"],
+    ["Revenue growth", brief.context?.revenueGrowth],
     ["Gross margin", brief.margin],
-    ["Sector", brief.context?.sector || "Unavailable"],
-    ["Industry", brief.context?.industry || "Unavailable"]
-  ];
+    ["Sector", brief.context?.sector],
+    ["Industry", brief.context?.industry]
+  ]);
 
   metricGrid.innerHTML = values
-    .map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`)
+    .map(([label, value]) => `<div class="metric-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`)
     .join("");
 }
 
@@ -766,26 +779,31 @@ function renderFundamentals(brief) {
   const context = brief.context || {};
   const surprise = context.earningsSurprisePercent;
   const shareChange = context.shareChangePercent;
-  const values = [
-    ["Free cash flow", context.freeCashFlow || "Unavailable", "Operating cash flow less capital expenditures"],
-    ["FCF margin", context.freeCashFlowMargin || "Unavailable", "Free cash flow as a share of revenue"],
-    ["Net margin", context.netMargin || context.providerProfitMargin || "Unavailable", "Net income as a share of revenue"],
-    ["Return on equity", context.returnOnEquity || context.providerReturnOnEquity || "Unavailable", "Net income relative to shareholder equity"],
-    ["Return on assets", context.returnOnAssets || "Unavailable", "Net income relative to total assets"],
-    ["Total debt", context.totalDebt || "Unavailable", "Latest reported interest-bearing debt"],
-    ["Net debt", context.netDebt || "Unavailable", "Debt less cash and equivalents"],
-    ["Debt / equity", context.debtToEquity || "Unavailable", "Debt divided by shareholder equity"],
-    ["P/E", brief.pe || "Unavailable", context.peMethod || "Provider valuation multiple"],
-    ["Price / sales", context.priceToSales || "Unavailable", "Trailing market value relative to revenue"],
-    ["EV / EBITDA", context.evToEbitda || "Unavailable", "Enterprise value relative to EBITDA"],
-    ["Share change", context.shareChange || "Unavailable", `${context.dilutionLabel || "Unavailable"} versus prior fiscal year`],
-    ["Diluted shares", context.dilutedShares || "Unavailable", "Latest annual diluted weighted-average shares"],
-    ["EPS surprise", Number.isFinite(Number(surprise)) ? `${Number(surprise) >= 0 ? "+" : ""}${Number(surprise).toFixed(1)}%` : "Unavailable", context.earningsSurpriseLabel || "Requires configured earnings provider"],
-    ["Reported EPS", Number.isFinite(Number(context.reportedEps)) ? Number(context.reportedEps).toFixed(2) : "Unavailable", context.latestEarningsDate || "Latest quarter"],
-    ["Capital spending", context.capitalExpenditures || "Unavailable", "Property, plant, and equipment investment"]
-  ];
+  const values = displayEntries([
+    ["Free cash flow", context.freeCashFlow, "Operating cash flow less capital expenditures"],
+    ["FCF margin", context.freeCashFlowMargin, "Free cash flow as a share of revenue"],
+    ["Net margin", hasDisplayValue(context.netMargin) ? context.netMargin : context.providerProfitMargin, "Net income as a share of revenue"],
+    ["Return on equity", hasDisplayValue(context.returnOnEquity) ? context.returnOnEquity : context.providerReturnOnEquity, "Net income relative to shareholder equity"],
+    ["Return on assets", context.returnOnAssets, "Net income relative to total assets"],
+    ["Total debt", context.totalDebt, "Latest reported interest-bearing debt"],
+    ["Net debt", context.netDebt, "Debt less cash and equivalents"],
+    ["Debt / equity", context.debtToEquity, "Debt divided by shareholder equity"],
+    ["P/E", brief.pe, context.peMethod || "Provider valuation multiple"],
+    ["Price / sales", context.priceToSales, "Trailing market value relative to revenue"],
+    ["EV / EBITDA", context.evToEbitda, "Enterprise value relative to EBITDA"],
+    ["Share change", context.shareChange, hasDisplayValue(context.dilutionLabel) ? `${context.dilutionLabel} versus prior fiscal year` : "Annual diluted-share change"],
+    ["Diluted shares", context.dilutedShares, "Latest annual diluted weighted-average shares"],
+    ["EPS surprise", Number.isFinite(Number(surprise)) ? `${Number(surprise) >= 0 ? "+" : ""}${Number(surprise).toFixed(1)}%` : null, context.earningsSurpriseLabel || "Latest reported quarter"],
+    ["Reported EPS", Number.isFinite(Number(context.reportedEps)) ? Number(context.reportedEps).toFixed(2) : null, hasDisplayValue(context.latestEarningsDate) ? context.latestEarningsDate : "Latest reported quarter"],
+    ["Capital spending", context.capitalExpenditures, "Property, plant, and equipment investment"]
+  ]);
 
-  fundamentalsStatus.textContent = `Fiscal period ${context.latestFiscalPeriod || "unavailable"}; latest filing ${context.latestFilingDate || "unavailable"}.`;
+  const fiscalDetails = [
+    hasDisplayValue(context.latestFiscalPeriod) ? `Fiscal period ${context.latestFiscalPeriod}` : null,
+    hasDisplayValue(context.latestFilingDate) ? `latest filing ${context.latestFilingDate}` : null
+  ].filter(Boolean);
+  fundamentalsGrid.closest(".fundamentals-panel").hidden = values.length === 0;
+  fundamentalsStatus.textContent = fiscalDetails.length ? `${fiscalDetails.join("; ")}.` : `${values.length} sourced or calculated fundamentals available.`;
   fundamentalsGrid.innerHTML = values.map(([label, value, detail]) => {
     const numericSignal = label === "EPS surprise" ? Number(surprise) : label === "Share change" ? Number(shareChange) : null;
     const className = Number.isFinite(numericSignal) ? (label === "Share change" ? (numericSignal <= 0 ? "gain" : "loss") : (numericSignal >= 0 ? "gain" : "loss")) : "";
@@ -846,6 +864,7 @@ async function requestCatalysts(ticker) {
       return a.title.localeCompare(b.title);
     });
     renderCatalysts();
+    if (guideTabs.querySelector(".guide-tab.active")?.dataset.topic === "catalysts") renderResearchGuide("catalysts");
     const upcoming = catalystEvents.filter((event) => event.timing === "upcoming").length;
     catalystStatus.textContent = `${upcoming} upcoming and ${catalystEvents.length - upcoming} recent or monitoring events. Updated ${formatClock(data.updatedAt)}.`;
   } catch (error) {
@@ -867,27 +886,27 @@ function escapeHtml(value) {
 
 function renderContext(brief) {
   const context = brief.context || {};
-  const values = [
-    ["Analyst target", context.analystTargetPrice || "Unavailable"],
-    ["Dividend yield", context.dividendYield || "Unavailable"],
-    ["52W high", context.fiftyTwoWeekHigh || "Unavailable"],
-    ["52W low", context.fiftyTwoWeekLow || "Unavailable"],
-    ["SEC revenue", context.fiscalRevenue || "Unavailable"],
-    ["SEC net income", context.fiscalNetIncome || "Unavailable"],
-    ["Assets", context.totalAssets || "Unavailable"],
-    ["Liabilities", context.totalLiabilities || "Unavailable"],
-    ["Operating cash flow", context.operatingCashFlow || "Unavailable"],
-    ["Latest filing", context.latestFilingDate || "Unavailable"],
+  const values = displayEntries([
+    ["Analyst target", context.analystTargetPrice],
+    ["Dividend yield", context.dividendYield],
+    ["52W high", context.fiftyTwoWeekHigh],
+    ["52W low", context.fiftyTwoWeekLow],
+    ["SEC revenue", context.fiscalRevenue],
+    ["SEC net income", context.fiscalNetIncome],
+    ["Assets", context.totalAssets],
+    ["Liabilities", context.totalLiabilities],
+    ["Operating cash flow", context.operatingCashFlow],
+    ["Latest filing", context.latestFilingDate],
     ["Lens", brief.lens || getLens()],
     ["Horizon", brief.horizon || document.querySelector("#horizonInput").value]
-  ];
+  ]);
 
-  contextList.innerHTML = `
-    <p>${escapeHtml(context.description || "Company profile context is unavailable.")}</p>
-    <div class="context-metrics">
+  const description = hasDisplayValue(context.description) ? `<p>${escapeHtml(context.description)}</p>` : "";
+  const metrics = values.length ? `<div class="context-metrics">
       ${values.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
-    </div>
-  `;
+    </div>` : "";
+
+  contextList.innerHTML = `${description}${metrics}`;
 }
 
 function renderSources(brief) {
@@ -914,7 +933,7 @@ function renderSources(brief) {
 
 function formatDateTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value || "Unavailable");
+  if (Number.isNaN(date.getTime())) return String(value || "Date not supplied");
   return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
@@ -1023,105 +1042,58 @@ async function requestPriceHistory(ticker, horizon) {
   }
 }
 
-function resetChat(brief) {
-  chatLog.innerHTML = "";
-  const qualifier = brief.warning ? ` I also hit this API issue: ${brief.warning}` : "";
-  addMessage("ai", `I built a ${brief.lens || getLens()} brief for ${brief.ticker}.${qualifier} Ask me to pressure-test valuation, catalysts, margin risk, or what would change the thesis.`);
+function guideSection(title, summary, items = []) {
+  const meaningfulItems = items.filter(hasDisplayValue);
+  return `<div class="guide-section"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(summary)}</p>${meaningfulItems.length ? `<ul>${meaningfulItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}</div>`;
 }
 
-function addMessage(role, text) {
-  const message = document.createElement("div");
-  message.className = `message ${role}`;
-  message.textContent = text;
-  chatLog.appendChild(message);
-  chatLog.scrollTop = chatLog.scrollHeight;
-  return message;
+function guideMetric(label, value) {
+  return hasDisplayValue(value) ? `${label}: ${value}` : null;
 }
 
-function renderCitedAnswer(message, data) {
-  message.textContent = "";
-  message.classList.add("cited-message");
-  const citations = new Map((data.citations || []).map((source) => [source.id, source]));
-  for (const claim of data.claims || []) {
-    const paragraph = document.createElement("p");
-    paragraph.append(document.createTextNode(claim.text));
-    const markers = document.createElement("span");
-    markers.className = "citation-markers";
-    for (const sourceId of claim.sourceIds || []) {
-      const source = citations.get(sourceId);
-      if (!source) continue;
-      const marker = source.url ? document.createElement("a") : document.createElement("span");
-      marker.className = "citation-marker";
-      marker.textContent = `[${sourceId}]`;
-      marker.title = `${source.provider}: ${source.title}`;
-      if (source.url) {
-        marker.href = source.url;
-        marker.target = "_blank";
-        marker.rel = "noreferrer";
-      }
-      markers.appendChild(marker);
-    }
-    paragraph.appendChild(markers);
-    message.appendChild(paragraph);
+function renderResearchGuide(topic = "valuation") {
+  if (!activeBrief) return;
+  const context = activeBrief.context || {};
+  const sources = (activeBrief.sources || []).slice(0, 3);
+  let content;
+
+  if (topic === "risk") {
+    content = guideSection("Primary risks", `These risks come from the stored company profile and current research checks for ${activeBrief.ticker}.`, activeBrief.risks || []);
+  } else if (topic === "catalysts") {
+    const datedCatalysts = catalystEvents.slice(0, 3).map((event) => `${event.title}${event.date ? ` (${event.date})` : ""}`);
+    content = guideSection("Potential catalysts", "Monitor operating drivers alongside dated company events.", [...(activeBrief.drivers || []).slice(0, 3), ...datedCatalysts].slice(0, 5));
+  } else if (topic === "profitability") {
+    const marginSummary = hasDisplayValue(activeBrief.margin)
+      ? `${activeBrief.name} reports a gross margin marker of ${activeBrief.margin}.`
+      : `Available profitability measures for ${activeBrief.name}.`;
+    content = guideSection("Profitability markers", marginSummary, [
+      guideMetric("Free cash flow", context.freeCashFlow),
+      guideMetric("Free cash flow margin", context.freeCashFlowMargin),
+      guideMetric("Net margin", hasDisplayValue(context.netMargin) ? context.netMargin : context.providerProfitMargin),
+      guideMetric("Return on equity", hasDisplayValue(context.returnOnEquity) ? context.returnOnEquity : context.providerReturnOnEquity)
+    ]);
+  } else if (topic === "thesis") {
+    content = guideSection("Thesis checkpoints", activeBrief.thesis, activeBrief.checks || []);
+  } else {
+    const fitScore = activeBrief.purchaseFit?.score ?? calculatePurchaseFit(activeBrief).score;
+    const valuationSummary = hasDisplayValue(activeBrief.pe)
+      ? `${activeBrief.ticker} has a P/E marker of ${activeBrief.pe} and a Purchase Fit score of ${fitScore}.`
+      : `${activeBrief.ticker} has a Purchase Fit score of ${fitScore}; no P/E multiple is currently reported.`;
+    const range = hasDisplayValue(context.fiftyTwoWeekLow) && hasDisplayValue(context.fiftyTwoWeekHigh)
+      ? `${context.fiftyTwoWeekLow} to ${context.fiftyTwoWeekHigh}`
+      : null;
+    content = guideSection("Valuation context", valuationSummary, [
+      guideMetric("Reported revenue growth", hasDisplayValue(context.revenueGrowth) ? context.revenueGrowth : (String(activeBrief.revenue || "").includes("%") ? activeBrief.revenue : null)),
+      guideMetric("Market capitalization", activeBrief.marketCap),
+      guideMetric("Analyst target", context.analystTargetPrice),
+      guideMetric("52-week range", range)
+    ]);
   }
 
-  if (data.citations?.length) {
-    const evidence = document.createElement("details");
-    evidence.className = "chat-evidence";
-    const summary = document.createElement("summary");
-    summary.textContent = `${data.citations.length} source${data.citations.length === 1 ? "" : "s"}`;
-    evidence.appendChild(summary);
-    for (const source of data.citations) {
-      const item = document.createElement("div");
-      const title = source.url ? document.createElement("a") : document.createElement("strong");
-      title.textContent = `${source.id} ${source.title}`;
-      if (source.url) {
-        title.href = source.url;
-        title.target = "_blank";
-        title.rel = "noreferrer";
-      }
-      const provider = document.createElement("span");
-      provider.textContent = source.provider;
-      item.append(title, provider);
-      evidence.appendChild(item);
-    }
-    message.appendChild(evidence);
-  }
-
-  if (data.caveat) {
-    const caveat = document.createElement("small");
-    caveat.className = "chat-caveat";
-    caveat.textContent = data.caveat;
-    message.appendChild(caveat);
-  }
-}
-
-async function askAssistant(question) {
-  const pending = addMessage("ai", "Thinking...");
-  questionInput.disabled = true;
-
-  try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        question,
-        ticker: activeTicker,
-        brief: activeBrief
-      })
-    });
-
-    if (!response.ok) throw new Error(`Chat request failed with ${response.status}.`);
-    const data = await response.json();
-    if (data.grounded && data.claims?.length) renderCitedAnswer(pending, data);
-    else pending.textContent = "The available evidence was not sufficient to support a grounded answer.";
-  } catch (error) {
-    pending.textContent = `I could not reach the chat endpoint, so here is the practical fallback: ${activeBrief.thesis}`;
-  } finally {
-    questionInput.disabled = false;
-    questionInput.focus();
-    chatLog.scrollTop = chatLog.scrollHeight;
-  }
+  const sourceLinks = sources.length
+    ? `<div class="guide-sources"><strong>Relevant sources</strong>${sources.map((source) => source.url ? `<a href="${escapeHtml(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(source.provider || source.title)}</a>` : `<span>${escapeHtml(source.provider || source.title)}</span>`).join("")}</div>`
+    : '<div class="guide-sources"><span>No linked source is available for this cached field.</span></div>';
+  guideOutput.innerHTML = `${content}${sourceLinks}<small>Rules-based research support only; verify material decisions against primary sources.</small>`;
 }
 
 async function refreshTrustedData() {
@@ -1199,13 +1171,13 @@ function startLivePrices() {
   liveTimer = window.setInterval(refreshLivePrices, liveRefreshMs);
 }
 
-function briefText() {
+function summaryText() {
   const brief = activeBrief || fallbackBrief(activeTicker);
   const fit = brief.purchaseFit || calculatePurchaseFit(brief);
   return `${brief.name} (${brief.ticker})
 Calculation price: $${Number(brief.price).toFixed(2)}
 Quote source: ${brief.quoteSource || brief.source || "Local fallback"}
-Quote time: ${brief.quoteUpdatedAt || "Unavailable"}
+Quote time: ${brief.quoteUpdatedAt || "Not supplied"}
 Score: ${brief.score}
 Purchase fit: ${fit.score} (${fit.label})
 Reported revenue growth: ${fit.growthPercent >= 0 ? "+" : ""}${Number(fit.growthPercent).toFixed(1)}%
@@ -1248,7 +1220,7 @@ function render(brief) {
   renderWatchlist();
   renderAccount();
   renderComparison();
-  resetChat(brief);
+  renderResearchGuide(guideTabs.querySelector(".guide-tab.active")?.dataset.topic || "valuation");
 }
 
 form.addEventListener("submit", (event) => {
@@ -1262,25 +1234,23 @@ form.addEventListener("change", () => {
   requestScreener();
 });
 
-chatForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const question = questionInput.value.trim();
-  if (!question || !activeBrief) return;
-  addMessage("user", question);
-  questionInput.value = "";
-  askAssistant(question);
+guideTabs.addEventListener("click", (event) => {
+  const button = event.target.closest(".guide-tab");
+  if (!button) return;
+  guideTabs.querySelectorAll(".guide-tab").forEach((tab) => tab.classList.toggle("active", tab === button));
+  renderResearchGuide(button.dataset.topic);
 });
 
 copyButton.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(briefText());
+  await navigator.clipboard.writeText(summaryText());
 });
 
 downloadButton.addEventListener("click", () => {
-  const blob = new Blob([briefText()], { type: "text/plain" });
+  const blob = new Blob([summaryText()], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `${activeTicker}-research-brief.txt`;
+  anchor.download = `${activeTicker}-research-summary.txt`;
   anchor.click();
   URL.revokeObjectURL(url);
 });

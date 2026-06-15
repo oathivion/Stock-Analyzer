@@ -430,9 +430,9 @@
   "GO": {
     "ticker": "GO",
     "name": "Grocery Outlet Holding Corp.",
-    "price": 9.58,
-    "change": 1.7,
-    "marketCap": "$948M",
+    "price": 9.62,
+    "change": 0.42,
+    "marketCap": "$952M",
     "pe": "Not reported",
     "revenue": "$5B",
     "margin": "+30.3%",
@@ -460,37 +460,43 @@
         "title": "Chart quote",
         "provider": "Yahoo Finance",
         "url": "https://query1.finance.yahoo.com/v8/finance/chart/GO?range=1d&interval=1m",
-        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change."
+        "detail": "No-key quote endpoint used for the current calculation price and daily percentage change.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       },
       {
         "title": "SEC EDGAR Company Facts",
         "provider": "U.S. Securities and Exchange Commission",
         "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001771515.json",
-        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow."
+        "detail": "XBRL company facts for reported revenue, net income, assets, liabilities, equity, and operating cash flow.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       },
       {
         "title": "Company Profile",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/company/GO/company-profile",
-        "detail": "Company description, sector, industry, region, address, and corporate website."
+        "detail": "Company description, sector, industry, region, address, and corporate website.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       },
       {
         "title": "Analyst Price Targets",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/analyst/GO/targetprice",
-        "detail": "Consensus target range and current buy, hold, and sell counts."
+        "detail": "Consensus target range and current buy, hold, and sell counts.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       },
       {
         "title": "Dividend History",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/GO/dividends?assetclass=stocks",
-        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date."
+        "detail": "Current dividend yield, annualized dividend, ex-dividend date, and payment date.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       },
       {
         "title": "Quote Summary",
         "provider": "Nasdaq",
         "url": "https://api.nasdaq.com/api/quote/GO/summary?assetclass=stocks",
-        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary."
+        "detail": "Market capitalization, exchange, volume, dividend, and trading-range summary.",
+        "retrievedAt": "2026-06-15T20:17:18.329Z"
       }
     ],
     "context": {
@@ -526,12 +532,65 @@
       "exDividendDate": "No scheduled dividend",
       "dividendPaymentDate": "No scheduled dividend",
       "exchange": "NASDAQ-GS",
-      "averageVolume": "3,115,457"
+      "averageVolume": "3,106,595",
+      "priorFiscalRevenue": "$4B",
+      "revenueGrowthPercent": 7.3,
+      "revenueGrowth": "+7.3%",
+      "capitalExpenditures": "$198M",
+      "freeCashFlow": "$24M",
+      "freeCashFlowMargin": "+0.5%",
+      "netMargin": "-4.8%",
+      "returnOnAssets": "-7.6%",
+      "returnOnEquity": "-27.9%",
+      "totalDebt": "$489M",
+      "cashAndEquivalents": "$59M",
+      "netDebt": "$430M",
+      "debtToEquity": "0.60",
+      "dilutedShares": "98.0M",
+      "shareChangePercent": -1.6,
+      "shareChange": "-1.6%",
+      "dilutionLabel": "Buyback",
+      "priceToSales": "0.19"
     },
     "quoteSource": "Yahoo Finance",
-    "quoteUpdatedAt": "2026-06-12T20:00:01.000Z",
-    "refreshedAt": "2026-06-13T03:29:46.800Z",
-    "warnings": []
+    "quoteUpdatedAt": "2026-06-15T20:00:01.000Z",
+    "refreshedAt": "2026-06-15T20:18:09.414Z",
+    "warnings": [],
+    "catalysts": [
+      {
+        "type": "filing",
+        "title": "Latest SEC filing",
+        "date": "2026-03-04",
+        "detail": "Latest reported fiscal period: 2025 FY.",
+        "source": "SEC EDGAR",
+        "confidence": "reported",
+        "url": null,
+        "daysAway": -103,
+        "timing": "recent"
+      },
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target $9.71; range $8.00 to $14.00.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Review the latest SEC filing.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ]
   },
   "CO": {
     "ticker": "CO",
@@ -1328,6 +1387,152 @@
       }
     ],
     "refreshedAt": "2026-06-15T02:38:35.524Z",
+    "warnings": []
+  },
+  "GIO": {
+    "ticker": "GIO",
+    "name": "GIO",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-15T20:17:07.530Z.",
+        "retrievedAt": "2026-06-15T20:17:07.630Z"
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "GIO company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "catalysts": [
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target No consensus; range unavailable to unavailable.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Review the latest SEC filing.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ],
+    "refreshedAt": "2026-06-15T20:17:07.762Z",
+    "warnings": []
+  },
+  "GI": {
+    "ticker": "GI",
+    "name": "GI",
+    "price": 0,
+    "change": 0,
+    "marketCap": "Not reported",
+    "pe": "Not reported",
+    "revenue": "Not reported",
+    "margin": "Not reported",
+    "score": 65,
+    "verdict": "Research pending",
+    "thesis": "The stock is being enriched from live market, SEC, and Nasdaq sources.",
+    "drivers": [
+      "Review reported growth.",
+      "Compare valuation with peers.",
+      "Track cash flow and margins."
+    ],
+    "risks": [
+      "Provider coverage may vary by security.",
+      "Market prices can change rapidly.",
+      "Verify material developments in company filings."
+    ],
+    "checks": [
+      "Review the latest SEC filing.",
+      "Confirm current valuation metrics.",
+      "Compare recent price performance."
+    ],
+    "source": "lookup",
+    "sources": [
+      {
+        "title": "Local trusted-source cache",
+        "provider": "Stock Analyzer",
+        "detail": "Last refreshed 2026-06-15T20:17:10.379Z.",
+        "retrievedAt": "2026-06-15T20:17:10.458Z"
+      }
+    ],
+    "context": {
+      "sector": "Not classified",
+      "industry": "Not classified",
+      "description": "GI company profile lookup.",
+      "analystTargetPrice": "No consensus",
+      "dividendYield": "0.00%",
+      "fiftyTwoWeekHigh": "Not reported",
+      "fiftyTwoWeekLow": "Not reported",
+      "latestNews": []
+    },
+    "catalysts": [
+      {
+        "type": "signal",
+        "title": "Analyst target monitor",
+        "date": null,
+        "detail": "Consensus target No consensus; range unavailable to unavailable.",
+        "source": "Nasdaq",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      },
+      {
+        "type": "check",
+        "title": "Thesis checkpoint",
+        "date": null,
+        "detail": "Review the latest SEC filing.",
+        "source": "Research model",
+        "confidence": "monitor",
+        "url": null,
+        "daysAway": null,
+        "timing": "monitor"
+      }
+    ],
+    "refreshedAt": "2026-06-15T20:17:10.544Z",
     "warnings": []
   }
 }
